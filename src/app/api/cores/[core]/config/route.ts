@@ -10,8 +10,9 @@ export async function PUT(
     const coreName = params.core;
 
     // Forward the request to tf-sdk API
+    const apiUrl = process.env.TF_SDK_URL || 'http://tf-sdk-api:8200';
     const response = await axios.put(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://tf-sdk-api:8200'}/api/cores/${coreName}/config`,
+      `${apiUrl}/api/cores/${coreName}/config`,
       body,
       {
         headers: {

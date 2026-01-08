@@ -18,7 +18,7 @@ interface FlowStep {
 }
 
 interface EnhancedNetworkFlowProps {
-  apiType: 'qod' | 'location' | 'traffic' | 'number-verification';
+  apiType: 'qod' | 'location' | 'traffic' | 'number-verification' | 'device-status';
   requestData?: any;
   responseData?: any;
   onComplete?: () => void;
@@ -625,6 +625,107 @@ export default function EnhancedNetworkFlow({
           },
         ];
 
+      case 'device-status':
+        const dsUeProfile = registeredServices.find(s => s.apiName === 'ue-profile-service');
+        
+        return [
+          {
+            id: 1,
+            from: 'Dashboard',
+            to: 'TF-SDK API',
+            message: resData?.reachabilityStatus ? 'CAMARA Reachability Status' : 'CAMARA Roaming Status',
+            endpoint: resData?.reachabilityStatus 
+              ? getEndpoint('tf-sdk-api', 'reachabilityStatus') 
+              : getEndpoint('tf-sdk-api', 'roamingStatus'),
+            method: 'POST',
+            requestData: reqData,
+            responseData: resData,
+            responseStatus: resData ? 200 : undefined,
+          },
+          {
+            id: 2,
+            from: 'TF-SDK API',
+            to: 'SDK Client',
+            message: 'Resolve Device to UE Profile',
+            endpoint: `SDK: client.get_ue_profile()`,
+            method: 'SDK',
+            requestData: reqData ? {
+              deviceIp: reqData.device?.ipv4Address?.publicAddress,
+            } : undefined,
+            responseStatus: resData ? 200 : undefined,
+          },
+          {
+            id: 3,
+            from: 'SDK Client',
+            to: dsUeProfile ? `${dsUeProfile.apiName}:${dsUeProfile.baseUrl?.split(':')[2]?.split('/')[0] || '8104'}` : 'UE Profile:8104',
+            message: 'Query UE Profile by IP',
+            endpoint: '/ue-profile?ip={deviceIp}',
+            method: 'GET',
+            requestData: reqData ? {
+              ip: reqData.device?.ipv4Address?.publicAddress,
+            } : undefined,
+            responseStatus: 200,
+          },
+          {
+            id: 4,
+            from: 'UE Profile Service',
+            to: 'Redis Cache',
+            message: 'Query UE State Cache',
+            endpoint: 'Redis: HGETALL ue:{imsi}',
+            method: 'GET',
+            responseStatus: 200,
+          },
+          {
+            id: 5,
+            from: 'Redis Cache',
+            to: 'UE Profile Service',
+            message: 'UE State Found (from CoreSim)',
+            endpoint: 'Response: RegistrationStatus, ConnectionStatus, PLMN',
+            method: 'RESPONSE',
+            responseData: resData?.reachabilityStatus ? {
+              connectionStatus: resData.reachabilityStatus,
+            } : resData?.roaming !== undefined ? {
+              roaming: resData.roaming,
+              plmn: resData.countryCode,
+            } : undefined,
+            responseStatus: 200,
+          },
+          {
+            id: 6,
+            from: dsUeProfile ? `${dsUeProfile.apiName}:${dsUeProfile.baseUrl?.split(':')[2]?.split('/')[0] || '8104'}` : 'UE Profile:8104',
+            to: 'SDK Client',
+            message: 'UE Profile Response',
+            endpoint: 'Response: UE Status Data',
+            method: 'RESPONSE',
+            responseData: resData,
+            responseStatus: 200,
+          },
+          {
+            id: 7,
+            from: 'SDK Client',
+            to: 'TF-SDK API',
+            message: resData?.reachabilityStatus ? 'Map to Connectivity Status' : 'Determine Roaming Status',
+            endpoint: resData?.reachabilityStatus ? 'SDK: map_connectivity_status()' : 'SDK: check_roaming_status()',
+            method: 'SDK',
+            responseData: resData,
+            responseStatus: 200,
+          },
+          {
+            id: 8,
+            from: 'TF-SDK API',
+            to: 'Dashboard',
+            message: resData?.reachabilityStatus 
+              ? `Status: ${resData.reachabilityStatus}` 
+              : resData?.roaming !== undefined 
+                ? (resData.roaming ? 'Roaming: Yes 🌐' : 'Roaming: No 🏠')
+                : 'Status Retrieved',
+            endpoint: 'Response: Device Status',
+            method: 'RESPONSE',
+            responseData: resData,
+            responseStatus: resData ? 200 : undefined,
+          },
+        ];
+
       default:
         return [];
     }
@@ -661,6 +762,8 @@ export default function EnhancedNetworkFlow({
             {apiType === 'qod' && '📊 Quality on Demand Flow'}
             {apiType === 'location' && '📍 Device Location Flow'}
             {apiType === 'traffic' && '🌐 Traffic Influence Flow'}
+            {apiType === 'number-verification' && '📱 Number Verification Flow'}
+            {apiType === 'device-status' && '📶 Device Status Flow'}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Real-time sequence diagram with actual API calls

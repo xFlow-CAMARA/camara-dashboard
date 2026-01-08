@@ -16,8 +16,9 @@ export async function POST(
       );
     }
 
+    const apiUrl = process.env.TF_SDK_URL || 'http://tf-sdk-api:8200';
     const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://tf-sdk-api:8200'}/api/cores/${core}/control`,
+      `${apiUrl}/api/cores/${core}/control`,
       { action },
       { timeout: 10000 }
     );

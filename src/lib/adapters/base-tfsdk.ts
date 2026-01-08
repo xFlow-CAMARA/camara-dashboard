@@ -10,6 +10,12 @@ import {
   NumberVerificationRequest,
   NumberVerificationResponse,
   DevicePhoneNumberResponse,
+  ReachabilityStatusRequest,
+  ReachabilityStatusResponse,
+  RoamingStatusRequest,
+  RoamingStatusResponse,
+  DeviceStatusSubscriptionRequest,
+  DeviceStatusSubscriptionResponse,
   Device,
   DeviceIpv4Addr,
   normalizeDevice,
@@ -324,6 +330,93 @@ export abstract class BaseTFSDKAdapter implements BackendAdapter {
     );
     
     return response.data;
+  }
+
+  // Device Status APIs
+  async getReachabilityStatus(request: ReachabilityStatusRequest): Promise<ReachabilityStatusResponse> {
+    const normalizedDevice = normalizeDevice(request.device);
+    const deviceIp = normalizedDevice?.ipv4Address?.publicAddress || '';
+    
+    const params = new URLSearchParams({ core: this.coreName });
+    if (deviceIp) {
+      params.append('device_ip', deviceIp);
+    }
+
+    const response = await this.client.post(
+      `/device-status/reachability/v1/retrieve?${params}`,
+      { device: normalizedDevice },
+      { headers: this.getHeaders() }
+    );
+    
+    return response.data;
+  }
+
+  async getRoamingStatus(request: RoamingStatusRequest): Promise<RoamingStatusResponse> {
+    const normalizedDevice = normalizeDevice(request.device);
+    const deviceIp = normalizedDevice?.ipv4Address?.publicAddress || '';
+    
+    const params = new URLSearchParams({ core: this.coreName });
+    if (deviceIp) {
+      params.append('device_ip', deviceIp);
+    }
+
+    const response = await this.client.post(
+      `/device-status/roaming/v1/retrieve?${params}`,
+      { device: normalizedDevice },
+      { headers: this.getHeaders() }
+    );
+    
+    return response.data;
+  }
+
+  async createReachabilitySubscription(request: DeviceStatusSubscriptionRequest): Promise<DeviceStatusSubscriptionResponse> {
+    const normalizedDevice = normalizeDevice(request.device);
+    
+    const response = await this.client.post(
+      `/device-status/reachability/v1/subscriptions?core=${this.coreName}`,
+      {
+        device: normalizedDevice,
+        sink: request.sink,
+        sinkCredential: request.sinkCredential,
+        subscriptionExpireTime: request.subscriptionExpireTime,
+        subscriptionMaxEvents: request.subscriptionMaxEvents,
+      },
+      { headers: this.getHeaders() }
+    );
+    
+    return response.data;
+  }
+
+  async deleteReachabilitySubscription(subscriptionId: string): Promise<void> {
+    await this.client.delete(
+      `/device-status/reachability/v1/subscriptions/${subscriptionId}?core=${this.coreName}`,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  async createRoamingSubscription(request: DeviceStatusSubscriptionRequest): Promise<DeviceStatusSubscriptionResponse> {
+    const normalizedDevice = normalizeDevice(request.device);
+    
+    const response = await this.client.post(
+      `/device-status/roaming/v1/subscriptions?core=${this.coreName}`,
+      {
+        device: normalizedDevice,
+        sink: request.sink,
+        sinkCredential: request.sinkCredential,
+        subscriptionExpireTime: request.subscriptionExpireTime,
+        subscriptionMaxEvents: request.subscriptionMaxEvents,
+      },
+      { headers: this.getHeaders() }
+    );
+    
+    return response.data;
+  }
+
+  async deleteRoamingSubscription(subscriptionId: string): Promise<void> {
+    await this.client.delete(
+      `/device-status/roaming/v1/subscriptions/${subscriptionId}?core=${this.coreName}`,
+      { headers: this.getHeaders() }
+    );
   }
 
   private parsePortSpec(portSpec: string): any {

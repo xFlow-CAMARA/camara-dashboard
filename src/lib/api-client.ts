@@ -223,6 +223,74 @@ class ApiClient {
   async getDevicePhoneNumber(deviceIp: string): Promise<any> {
     return this.request<any>(`/api/number-verification/device-phone-number?deviceIp=${encodeURIComponent(deviceIp)}`);
   }
+
+  // Device Status endpoints (CAMARA Device Reachability & Roaming Status APIs)
+  
+  /**
+   * Get device reachability status
+   * Returns connectivity status: CONNECTED_SMS, CONNECTED_DATA, NOT_CONNECTED
+   */
+  async getReachabilityStatus(data: any): Promise<any> {
+    return this.request<any>('/api/device-status/reachability/retrieve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Get device roaming status
+   * Returns whether device is roaming and country information
+   */
+  async getRoamingStatus(data: any): Promise<any> {
+    return this.request<any>('/api/device-status/roaming/retrieve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Create a reachability status subscription for event notifications
+   */
+  async createReachabilitySubscription(data: any): Promise<any> {
+    return this.request<any>('/api/device-status/reachability/subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Delete a reachability status subscription
+   */
+  async deleteReachabilitySubscription(subscriptionId: string, adapter?: string): Promise<any> {
+    const query = adapter ? `?adapter=${adapter}` : '';
+    return this.request<any>(`/api/device-status/reachability/subscriptions/${subscriptionId}${query}`, {
+      method: 'DELETE',
+    });
+  }
+
+  /**
+   * Create a roaming status subscription for event notifications
+   */
+  async createRoamingSubscription(data: any): Promise<any> {
+    return this.request<any>('/api/device-status/roaming/subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Delete a roaming status subscription
+   */
+  async deleteRoamingSubscription(subscriptionId: string, adapter?: string): Promise<any> {
+    const query = adapter ? `?adapter=${adapter}` : '';
+    return this.request<any>(`/api/device-status/roaming/subscriptions/${subscriptionId}${query}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 // Export singleton instance

@@ -120,6 +120,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     >
                       Number Verification
                     </Link>
+                    <Link
+                      href="/device-status"
+                      className={`block px-3 py-2 text-sm rounded ${
+                        isActive('/device-status') 
+                          ? 'bg-blue-50 text-blue-700 font-medium' 
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Device Status
+                    </Link>
                   </div>
                 )}
               </div>

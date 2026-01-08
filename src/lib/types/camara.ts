@@ -219,6 +219,49 @@ export interface DevicePhoneNumberResponse {
   devicePhoneNumber: string;
 }
 
+// Device Status Types - CAMARA Device Status v1.0.0
+export type ConnectivityStatus = 'CONNECTED_SMS' | 'CONNECTED_DATA' | 'NOT_CONNECTED';
+
+export interface ReachabilityStatusRequest {
+  device: Device;
+}
+
+export interface ReachabilityStatusResponse {
+  reachabilityStatus: ConnectivityStatus;
+  lastStatusTime?: string;
+}
+
+export interface RoamingStatusRequest {
+  device: Device;
+}
+
+export interface RoamingStatusResponse {
+  roaming: boolean;
+  countryCode?: string;
+  countryName?: string[];
+}
+
+export interface DeviceStatusSubscriptionRequest {
+  device: Device;
+  sink: string;
+  sinkCredential?: {
+    credentialType: 'ACCESSTOKEN';
+    accessToken: string;
+    accessTokenExpiresUtc: string;
+    accessTokenType: 'bearer';
+  };
+  subscriptionExpireTime?: string;
+  subscriptionMaxEvents?: number;
+}
+
+export interface DeviceStatusSubscriptionResponse {
+  subscriptionId: string;
+  device: Device;
+  sink: string;
+  startsAt: string;
+  expiresAt?: string;
+}
+
 // Backend Adapter Interface
 export interface BackendAdapter {
   name: string;
@@ -235,6 +278,14 @@ export interface BackendAdapter {
   // Number Verification APIs
   verifyPhoneNumber(request: NumberVerificationRequest): Promise<NumberVerificationResponse>;
   getDevicePhoneNumber(device: Device): Promise<DevicePhoneNumberResponse>;
+  
+  // Device Status APIs
+  getReachabilityStatus(request: ReachabilityStatusRequest): Promise<ReachabilityStatusResponse>;
+  getRoamingStatus(request: RoamingStatusRequest): Promise<RoamingStatusResponse>;
+  createReachabilitySubscription(request: DeviceStatusSubscriptionRequest): Promise<DeviceStatusSubscriptionResponse>;
+  deleteReachabilitySubscription(subscriptionId: string): Promise<void>;
+  createRoamingSubscription(request: DeviceStatusSubscriptionRequest): Promise<DeviceStatusSubscriptionResponse>;
+  deleteRoamingSubscription(subscriptionId: string): Promise<void>;
 }
 
 // Provisioning Status

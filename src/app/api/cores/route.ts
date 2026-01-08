@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
+// Server-side environment variable (not NEXT_PUBLIC_ which is build-time only)
+const TF_SDK_BASE_URL = process.env.TF_SDK_URL || process.env.TF_SDK_API_URL || 'http://tf-sdk-api:8200';
+
 export async function GET(request: NextRequest) {
   try {
     // Get cores list from tf-sdk API
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://tf-sdk-api:8200'}/api/cores`, {
+    const response = await axios.get(`${TF_SDK_BASE_URL}/api/cores`, {
       timeout: 5000,
     });
 
