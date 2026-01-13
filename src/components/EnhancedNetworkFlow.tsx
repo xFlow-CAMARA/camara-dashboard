@@ -18,7 +18,7 @@ interface FlowStep {
 }
 
 interface EnhancedNetworkFlowProps {
-  apiType: 'qod' | 'location' | 'traffic' | 'number-verification' | 'device-status';
+  apiType: 'qod' | 'location' | 'traffic' | 'number-verification' | 'device-status' | 'sim-swap';
   requestData?: any;
   responseData?: any;
   onComplete?: () => void;
@@ -726,6 +726,94 @@ export default function EnhancedNetworkFlow({
           },
         ];
 
+      case 'sim-swap':
+        return [
+          {
+            id: 1,
+            from: 'Dashboard',
+            to: 'TF-SDK API',
+            message: reqData?.maxAge ? 'CAMARA SIM Swap Check' : 'CAMARA SIM Swap Date',
+            endpoint: reqData?.maxAge 
+              ? getEndpoint('tf-sdk-api', 'simSwapCheck') 
+              : getEndpoint('tf-sdk-api', 'simSwapRetrieveDate'),
+            method: 'POST',
+            requestData: reqData,
+            responseData: resData,
+            responseStatus: resData ? 200 : undefined,
+          },
+          {
+            id: 2,
+            from: 'TF-SDK API',
+            to: 'ue-profile-service',
+            message: 'Query UE Profile by MSISDN',
+            endpoint: 'GET /ue-profile/{msisdn}',
+            method: 'GET',
+            requestData: reqData ? {
+              phoneNumber: reqData.phoneNumber,
+            } : undefined,
+            responseStatus: 200,
+          },
+          {
+            id: 3,
+            from: 'ue-profile-service',
+            to: 'Redis',
+            message: 'Query UE Data Cache',
+            endpoint: 'Redis: GET ue:{supi}',
+            method: 'CACHE',
+            requestData: reqData ? {
+              msisdn: reqData.phoneNumber,
+            } : undefined,
+            responseStatus: 200,
+          },
+          {
+            id: 4,
+            from: 'Redis',
+            to: 'ue-profile-service',
+            message: 'UE Profile Data',
+            endpoint: 'Response: UE Profile',
+            method: 'RESPONSE',
+            responseData: {
+              supi: '...',
+              msisdn: reqData?.phoneNumber || '...',
+              registrationStatus: 'REGISTERED',
+            },
+            responseStatus: 200,
+          },
+          {
+            id: 5,
+            from: 'ue-profile-service',
+            to: 'TF-SDK API',
+            message: 'UE Profile Retrieved',
+            endpoint: 'Response: Subscriber Data',
+            method: 'RESPONSE',
+            responseStatus: 200,
+          },
+          {
+            id: 6,
+            from: 'TF-SDK API',
+            to: 'TF-SDK API',
+            message: reqData?.maxAge ? 'Calculate SIM Swap Status' : 'Derive Last Swap Date',
+            endpoint: reqData?.maxAge ? 'check_sim_swapped_via_nef()' : 'get_sim_swap_date_via_nef()',
+            method: 'INTERNAL',
+            responseData: resData,
+            responseStatus: 200,
+          },
+          {
+            id: 7,
+            from: 'TF-SDK API',
+            to: 'Dashboard',
+            message: resData?.swapped !== undefined 
+              ? (resData.swapped ? '🚨 SIM Swap Detected!' : '✅ No Recent Swap')
+              : resData?.latestSimChange 
+                ? `📅 Last Swap: ${new Date(resData.latestSimChange).toLocaleDateString()}`
+                : 'SIM Swap Data Retrieved',
+            endpoint: 'Response: SIM Swap Status',
+            method: 'RESPONSE',
+            responseData: resData,
+            responseStatus: resData ? 200 : undefined,
+          },
+        ];
+
       default:
         return [];
     }
@@ -764,6 +852,7 @@ export default function EnhancedNetworkFlow({
             {apiType === 'traffic' && '🌐 Traffic Influence Flow'}
             {apiType === 'number-verification' && '📱 Number Verification Flow'}
             {apiType === 'device-status' && '📶 Device Status Flow'}
+            {apiType === 'sim-swap' && '🔐 SIM Swap Detection Flow'}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Real-time sequence diagram with actual API calls

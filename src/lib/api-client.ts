@@ -291,6 +291,34 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // SIM Swap endpoints (CAMARA SIM Swap API)
+
+  /**
+   * Check if SIM swap occurred within a specified period
+   * @param data - { phoneNumber: string, maxAge?: number (hours, 1-2400, default 240) }
+   * @returns { swapped: boolean }
+   */
+  async checkSimSwap(data: { phoneNumber: string; maxAge?: number }): Promise<{ swapped: boolean }> {
+    return this.request<{ swapped: boolean }>('/api/sim-swap/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Retrieve the timestamp of the latest SIM swap event
+   * @param data - { phoneNumber: string }
+   * @returns { latestSimChange: string | null, monitoredPeriod?: number }
+   */
+  async retrieveSimSwapDate(data: { phoneNumber: string }): Promise<{ latestSimChange: string | null; monitoredPeriod?: number }> {
+    return this.request<{ latestSimChange: string | null; monitoredPeriod?: number }>('/api/sim-swap/retrieve-date', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 // Export singleton instance

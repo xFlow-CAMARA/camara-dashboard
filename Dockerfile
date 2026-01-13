@@ -13,13 +13,13 @@ RUN npm ci
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY package.json next.config.js ./
+COPY package.json next.config.js tsconfig.json tailwind.config.ts postcss.config.js ./
 COPY public ./public
 COPY src ./src
 
-# Copy pre-built .next directory from local machine
-# (Docker builds fail due to memory constraints, so build locally first: npm run build)
-COPY .next ./.next
+# Build the Next.js application
+ENV NEXT_TELEMETRY_DISABLED 1
+RUN npm run build
 
 # Production image
 FROM base AS runner

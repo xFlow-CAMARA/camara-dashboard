@@ -73,6 +73,21 @@ interface RegisteredService {
       openapi: string;
       release?: string;
     };
+    deviceReachabilityStatus?: {
+      spec: string;
+      openapi: string;
+      release?: string;
+    };
+    deviceRoamingStatus?: {
+      spec: string;
+      openapi: string;
+      release?: string;
+    };
+    simSwap?: {
+      spec: string;
+      openapi: string;
+      release?: string;
+    };
   };
   endpoints?: {
     [key: string]: {
@@ -255,6 +270,84 @@ export default function ServiceCard({ service }: ServiceCardProps) {
                     )}
                     <a
                       href={service.camaraApis.numberVerification.openapi}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 hover:underline"
+                    >
+                      <FileText className="w-3 h-3" />
+                      OpenAPI
+                    </a>
+                  </div>
+                )}
+                {service.camaraApis.deviceReachabilityStatus && (
+                  <div className="flex gap-3 items-center">
+                    <a
+                      href={service.camaraApis.deviceReachabilityStatus.spec}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      <BookOpen className="w-3 h-3" />
+                      Device Reachability Status
+                      <ExternalLink className="w-2 h-2" />
+                    </a>
+                    {service.camaraApis.deviceReachabilityStatus.release && (
+                      <span className="text-xs text-gray-500">({service.camaraApis.deviceReachabilityStatus.release})</span>
+                    )}
+                    <a
+                      href={service.camaraApis.deviceReachabilityStatus.openapi}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 hover:underline"
+                    >
+                      <FileText className="w-3 h-3" />
+                      OpenAPI
+                    </a>
+                  </div>
+                )}
+                {service.camaraApis.deviceRoamingStatus && (
+                  <div className="flex gap-3 items-center">
+                    <a
+                      href={service.camaraApis.deviceRoamingStatus.spec}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      <BookOpen className="w-3 h-3" />
+                      Device Roaming Status
+                      <ExternalLink className="w-2 h-2" />
+                    </a>
+                    {service.camaraApis.deviceRoamingStatus.release && (
+                      <span className="text-xs text-gray-500">({service.camaraApis.deviceRoamingStatus.release})</span>
+                    )}
+                    <a
+                      href={service.camaraApis.deviceRoamingStatus.openapi}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 hover:underline"
+                    >
+                      <FileText className="w-3 h-3" />
+                      OpenAPI
+                    </a>
+                  </div>
+                )}
+                {service.camaraApis.simSwap && (
+                  <div className="flex gap-3 items-center">
+                    <a
+                      href={service.camaraApis.simSwap.spec}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      <BookOpen className="w-3 h-3" />
+                      SIM Swap
+                      <ExternalLink className="w-2 h-2" />
+                    </a>
+                    {service.camaraApis.simSwap.release && (
+                      <span className="text-xs text-gray-500">({service.camaraApis.simSwap.release})</span>
+                    )}
+                    <a
+                      href={service.camaraApis.simSwap.openapi}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 hover:underline"

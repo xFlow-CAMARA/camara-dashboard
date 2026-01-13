@@ -70,6 +70,26 @@ interface RegisteredService {
       openapi: string;
       release?: string;
     };
+    numberVerification?: {
+      spec: string;
+      openapi: string;
+      release?: string;
+    };
+    deviceReachabilityStatus?: {
+      spec: string;
+      openapi: string;
+      release?: string;
+    };
+    deviceRoamingStatus?: {
+      spec: string;
+      openapi: string;
+      release?: string;
+    };
+    simSwap?: {
+      spec: string;
+      openapi: string;
+      release?: string;
+    };
   };
 }
 

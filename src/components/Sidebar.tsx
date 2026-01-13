@@ -130,6 +130,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     >
                       Device Status
                     </Link>
+                    <Link
+                      href="/sim-swap"
+                      className={`block px-3 py-2 text-sm rounded ${
+                        isActive('/sim-swap') 
+                          ? 'bg-blue-50 text-blue-700 font-medium' 
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      SIM Swap
+                    </Link>
                   </div>
                 )}
               </div>
