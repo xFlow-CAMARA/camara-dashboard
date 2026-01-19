@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import EnhancedNetworkFlow from './EnhancedNetworkFlow';
 import { apiClient } from '@/lib/api-client';
+import ApiMetrics from './ApiMetrics';
+import LogsViewer from './LogsViewer';
+import CoreLogsViewer from './CoreLogsViewer';
 
 interface NumberVerificationResult {
   devicePhoneNumberVerified?: boolean;
@@ -218,7 +221,16 @@ export default function NumberVerificationPanel() {
   return (
     <div className="space-y-6 w-full">
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">Number Verification</h2>
+        {/* <h2 className="text-2xl font-bold mb-6 text-gray-800">Number Verification</h2> */}
+
+        {/* API Metrics */}
+        <ApiMetrics apiName="Number Verification" />
+
+        {/* Request Logs */}
+        <LogsViewer apiName="Number Verification" />
+
+        {/* Core Network Logs */}
+        <CoreLogsViewer apiName="Number Verification" />
 
         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
           <div>

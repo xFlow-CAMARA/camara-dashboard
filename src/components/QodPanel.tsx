@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { QodSessionResponse } from '@/lib/types/camara';
 import EnhancedNetworkFlow from './EnhancedNetworkFlow';
 import { apiClient } from '@/lib/api-client';
+import ApiMetrics from './ApiMetrics';
+import LogsViewer from './LogsViewer';
+import CoreLogsViewer from './CoreLogsViewer';
 
 export default function QodPanel() {
   const [loading, setLoading] = useState(false);
@@ -103,16 +106,18 @@ export default function QodPanel() {
       } else if (method === 'DELETE' && result?.sessionId) {
         url = `/api/qod?sessionId=${result.sessionId}`;
         options.method = 'DELETE';
-      } else if (method === 'GET_ALL') {
-        url = `/api/qod`;
-        options.method = 'GET';
       }
 
       const response = await fetch(url, options);
-      const data = await response.json();
+      
+      // Handle 204 No Content (DELETE returns no body)
+      let data = null;
+      if (response.status !== 204) {
+        data = await response.json();
+      }
 
       setTestResult({
-        method: method === 'GET_ALL' ? 'GET /sessions' : method,
+        method: method,
         endpoint: url,
         status: response.status,
         data: data,
@@ -134,7 +139,16 @@ export default function QodPanel() {
   return (
     <div className="space-y-6 w-full">
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">Quality on Demand (QoD)</h2>
+        {/* <h2 className="text-2xl font-bold mb-6 text-gray-800">Quality on Demand (QoD)</h2> */}
+
+        {/* API Metrics */}
+        <ApiMetrics apiName="QoD" />
+
+        {/* Request Logs */}
+        <LogsViewer apiName="QoD" />
+
+        {/* Core Network Logs */}
+        <CoreLogsViewer apiName="QoD" />
 
         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
         <div>
@@ -289,14 +303,7 @@ export default function QodPanel() {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold mb-4 text-gray-800">Test API Endpoints</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-          <button
-            onClick={() => testEndpoint('GET_ALL', '/sessions')}
-            disabled={testLoading}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
-          >
-            GET All Sessions
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
           <button
             onClick={() => testEndpoint('GET', '/sessions/{sessionId}')}
             disabled={testLoading || !result?.sessionId}

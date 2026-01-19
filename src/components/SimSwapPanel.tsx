@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import EnhancedNetworkFlow from './EnhancedNetworkFlow';
 import { apiClient } from '@/lib/api-client';
+import ApiMetrics from './ApiMetrics';
+import LogsViewer from './LogsViewer';
+import CoreLogsViewer from './CoreLogsViewer';
 
 interface SimSwapCheckResult {
   swapped: boolean;
@@ -226,6 +229,15 @@ export default function SimSwapPanel() {
   return (
     <div className="space-y-6 w-full">
       <div className="bg-white rounded-lg shadow-md p-6">
+
+        {/* API Metrics */}
+        <ApiMetrics apiName="SIM Swap" />
+
+        {/* Request Logs */}
+        <LogsViewer apiName="SIM Swap" />
+
+        {/* Core Network Logs */}
+        <CoreLogsViewer apiName="SIM Swap" />
 
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-200 mb-6">

@@ -4,6 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { LocationResponse } from '@/lib/types/camara';
 import { apiClient } from '@/lib/api-client';
 import EnhancedNetworkFlow from './EnhancedNetworkFlow';
+import ApiMetrics from './ApiMetrics';
+import LogsViewer from './LogsViewer';
+import CoreLogsViewer from './CoreLogsViewer';
 
 // Dynamically import Leaflet to avoid SSR issues
 let L: any = null;
@@ -254,7 +257,16 @@ export default function LocationPanel() {
   return (
     <div className="space-y-6 w-full">
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">Device Location</h2>
+        {/* <h2 className="text-2xl font-bold mb-6 text-gray-800">Device Location</h2> */}
+
+        {/* API Metrics */}
+        <ApiMetrics apiName="Device Location" />
+
+        {/* Request Logs */}
+        <LogsViewer apiName="Device Location" />
+
+        {/* Core Network Logs */}
+        <CoreLogsViewer apiName="Device Location" />
 
       <form onSubmit={handleSubmit} className="space-y-4 mb-6">
         <div>

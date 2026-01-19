@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import EnhancedNetworkFlow from './EnhancedNetworkFlow';
 import { apiClient } from '@/lib/api-client';
+import ApiMetrics from './ApiMetrics';
+import LogsViewer from './LogsViewer';
+import CoreLogsViewer from './CoreLogsViewer';
 
 interface ReachabilityResult {
   // CAMARA compliant fields
@@ -260,6 +263,15 @@ export default function DeviceStatusPanel() {
   return (
     <div className="space-y-6 w-full">
       <div className="bg-white rounded-lg shadow-md p-6">
+
+        {/* API Metrics */}
+        <ApiMetrics apiName="Device Status" />
+
+        {/* Request Logs */}
+        <LogsViewer apiName="Device Status" />
+
+        {/* Core Network Logs */}
+        <CoreLogsViewer apiName="Device Status" />
 
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-200 mb-6">
