@@ -1,9 +1,9 @@
 'use client';
 
 export default function MonitoringPanel() {
-  const grafanaUrl = 'http://localhost:3000';
-  const dashboardUrl = 'http://localhost:3000/d/5g-core-sim/5g-core-simulator-dashboard';
-  const embedUrl = 'http://localhost:3000/d/5g-core-sim/5g-core-simulator-dashboard?orgId=1&refresh=5s&kiosk';
+  const grafanaUrl = 'http://192.168.20.171:3000';
+  const dashboardUrl = 'http://192.168.20.171:3000/d/5g-core-sim/5g-core-simulator-dashboard';
+  const embedUrl = 'http://192.168.20.171:3000/d/5g-core-sim/5g-core-simulator-dashboard?orgId=1&refresh=5s&kiosk';
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">

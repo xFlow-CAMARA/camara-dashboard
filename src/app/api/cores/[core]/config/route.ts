@@ -18,7 +18,7 @@ export async function PUT(
         headers: {
           'Content-Type': 'application/json',
         },
-        timeout: 5000,
+        timeout: 45000, // 45 seconds for container restart
       }
     );
 

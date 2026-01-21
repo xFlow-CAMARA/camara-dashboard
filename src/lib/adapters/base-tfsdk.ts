@@ -343,7 +343,7 @@ export abstract class BaseTFSDKAdapter implements BackendAdapter {
     }
 
     const response = await this.client.post(
-      `/device-status/reachability/v1/retrieve?${params}`,
+      `/device-reachability-status/v1/retrieve?${params}`,
       { device: normalizedDevice },
       { headers: this.getHeaders() }
     );
@@ -373,7 +373,7 @@ export abstract class BaseTFSDKAdapter implements BackendAdapter {
     const normalizedDevice = normalizeDevice(request.device);
     
     const response = await this.client.post(
-      `/device-status/reachability/v1/subscriptions?core=${this.coreName}`,
+      `/device-reachability-status/v1/subscriptions?core=${this.coreName}`,
       {
         device: normalizedDevice,
         sink: request.sink,
@@ -389,7 +389,7 @@ export abstract class BaseTFSDKAdapter implements BackendAdapter {
 
   async deleteReachabilitySubscription(subscriptionId: string): Promise<void> {
     await this.client.delete(
-      `/device-status/reachability/v1/subscriptions/${subscriptionId}?core=${this.coreName}`,
+      `/device-reachability-status/v1/subscriptions/${subscriptionId}?core=${this.coreName}`,
       { headers: this.getHeaders() }
     );
   }

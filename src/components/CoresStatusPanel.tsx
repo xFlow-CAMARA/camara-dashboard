@@ -50,6 +50,8 @@ export default function CoresStatusPanel() {
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [controlLoading, setControlLoading] = useState<string | null>(null);
+  const [restartingCore, setRestartingCore] = useState<string | null>(null);
+  const [restartStatus, setRestartStatus] = useState<string>('');
 
   const fetchCores = async () => {
     try {
@@ -93,8 +95,11 @@ export default function CoresStatusPanel() {
     if (!editingCore) return;
     
     setSaving(true);
+    setRestartingCore(editingCore);
+    setRestartStatus('Saving configuration...');
+    
     try {
-      await apiClient.updateCoreConfig(editingCore, {
+      const response = await apiClient.updateCoreConfig(editingCore, {
         simulationProfile: {
           plmn: { mcc: editForm.mcc, mnc: editForm.mnc },
           numOfUe: parseInt(editForm.numOfUe),
@@ -105,15 +110,65 @@ export default function CoresStatusPanel() {
         }
       });
 
-      await fetchCores();
+      if (response.restart_failed) {
+        setRestartStatus('Config saved but restart failed');
+        alert(response.message);
+        setRestartingCore(null);
+      } else {
+        setRestartStatus('Restarting core-simulator...');
+        // Poll for core status
+        await pollCoreStatus(editingCore);
+      }
+
       setEditingCore(null);
-      alert('Configuration updated successfully! Restart the core simulator to apply changes.');
     } catch (error) {
       console.error('Failed to save config:', error);
+      setRestartStatus('Failed to save configuration');
       alert('Failed to save configuration');
+      setRestartingCore(null);
     } finally {
       setSaving(false);
     }
+  };
+
+  const pollCoreStatus = async (coreName: string) => {
+    const maxAttempts = 10; // 10 attempts (20 seconds total)
+    const pollInterval = 2000; // 2 seconds
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      setRestartStatus(`Verifying restart (${attempt}/${maxAttempts})...`);
+      
+      try {
+        // Fetch fresh data each time
+        const freshData = await apiClient.getCores();
+        const currentCore = freshData?.cores?.find((c: any) => c.name === coreName);
+        
+        // Accept both STARTED and CONFIGURED states as success after restart
+        if (currentCore?.connected && (currentCore?.status === 'STARTED' || currentCore?.status === 'CONFIGURED')) {
+          setRestartStatus('✓ Restart successful!');
+          await fetchCores(); // Final refresh to update UI
+          setTimeout(() => {
+            setRestartingCore(null);
+            setRestartStatus('');
+          }, 2000);
+          return;
+        }
+      } catch (error) {
+        console.error('Poll error:', error);
+      }
+      
+      if (attempt < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+      }
+    }
+    
+    // If we get here, timeout occurred
+    setRestartStatus('Restart completed - refreshing...');
+    await fetchCores(); // Final refresh
+    setTimeout(() => {
+      setRestartingCore(null);
+      setRestartStatus('');
+    }, 2000);
   };
 
   const handleControl = async (coreName: string, action: 'start' | 'stop') => {
@@ -480,7 +535,7 @@ export default function CoresStatusPanel() {
             
             <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
               <p className="text-sm text-yellow-800">
-                ⚠️ Changes will be saved to the configuration file. You need to restart the core simulator for changes to take effect.
+                ⚠️ Changes will be saved and the core simulator will restart automatically to apply the new configuration.
               </p>
             </div>
             
@@ -499,6 +554,22 @@ export default function CoresStatusPanel() {
               >
                 {saving ? 'Saving...' : 'Save Configuration'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restart Status Modal */}
+      {restartingCore && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Restarting Core Simulator</h3>
+              <p className="text-gray-600 text-center mb-4">{restartStatus}</p>
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div className="bg-blue-600 h-2.5 rounded-full animate-pulse" style={{width: '100%'}}></div>
+              </div>
             </div>
           </div>
         </div>
