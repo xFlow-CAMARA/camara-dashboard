@@ -31,6 +31,9 @@ export default function LocationPanel() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'overview' | 'flow' | 'logs'>('overview');
 
   const [formData, setFormData] = useState({
     networkAccessIdentifier: '',
@@ -262,12 +265,45 @@ export default function LocationPanel() {
         {/* API Metrics */}
         <ApiMetrics apiName="Device Location" />
 
-        {/* Request Logs */}
-        <LogsViewer apiName="Device Location" />
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'overview'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('flow')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'flow'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Flow Sequence
+            </button>
+            <button
+              onClick={() => setActiveTab('logs')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'logs'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Logs
+            </button>
+          </nav>
+        </div>
 
-        {/* Core Network Logs */}
-        <CoreLogsViewer apiName="Device Location" />
-
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+        <>
       <form onSubmit={handleSubmit} className="space-y-4 mb-6">
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1">
@@ -449,10 +485,11 @@ export default function LocationPanel() {
           )}
         </div>
       )}
-      </div>
+        </>
+        )}
 
       {/* API Testing Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      {/* <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold mb-4 text-gray-800">Test API Endpoint</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -506,17 +543,35 @@ export default function LocationPanel() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
-      {/* Network Flow Visualization */}
-      {showVisualization && (
-        <EnhancedNetworkFlow 
-          apiType="location" 
-          requestData={requestData}
-          responseData={result}
-          onComplete={() => {}}
-        />
-      )}
+        {/* Flow Sequence Tab */}
+        {activeTab === 'flow' && (
+        <div>
+          {showVisualization && result ? (
+            <EnhancedNetworkFlow 
+              apiType="location" 
+              requestData={requestData}
+              responseData={result}
+              onComplete={() => {}}
+            />
+          ) : (
+            <div className="text-center py-16 bg-gray-50 rounded-lg">
+              <p className="text-gray-600 text-lg mb-2">No flow sequence available</p>
+              <p className="text-gray-500 text-sm">Retrieve a device location first to view the network flow visualization</p>
+            </div>
+          )}
+        </div>
+        )}
+
+        {/* Logs Tab */}
+        {activeTab === 'logs' && (
+        <div className="space-y-6">
+          <LogsViewer apiName="Device Location" />
+          <CoreLogsViewer apiName="Device Location" />
+        </div>
+        )}
+      </div>
     </div>
   );
 }

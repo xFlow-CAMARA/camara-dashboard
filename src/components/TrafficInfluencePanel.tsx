@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import ApiMetrics from './ApiMetrics';
 import LogsViewer from './LogsViewer';
 import CoreLogsViewer from './CoreLogsViewer';
 import { TrafficInfluenceResponse } from '@/lib/types/camara';
 import { apiClient } from '@/lib/api-client';
 import EnhancedNetworkFlow from './EnhancedNetworkFlow';
+import { Trash2, RefreshCw, Search, Database } from 'lucide-react';
 
 export default function TrafficInfluencePanel() {
   const [loading, setLoading] = useState(false);
@@ -18,6 +19,58 @@ export default function TrafficInfluencePanel() {
   const [testResult, setTestResult] = useState<any>(null);
   const [testLoading, setTestLoading] = useState(false);
   const [requestData, setRequestData] = useState<any>(null);
+  
+  // History state
+  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [searchId, setSearchId] = useState('');
+  const [filterId, setFilterId] = useState('');
+  const [viewingInfluence, setViewingInfluence] = useState<any>(null);
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'flow' | 'logs'>('overview');
+
+  function getHistoryAppId(influence: any): string {
+    const tryParse = (value: any) => {
+      if (typeof value !== 'string') return value;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
+    };
+
+    const readAppId = (value: any): string => {
+      const obj = tryParse(value);
+      if (!obj || typeof obj !== 'object') return '';
+      return (
+        obj.appId ||
+        obj.appID ||
+        obj?.data?.appId ||
+        obj?.body?.appId ||
+        obj?.payload?.appId ||
+        ''
+      );
+    };
+
+    return readAppId(influence?.response) || readAppId(influence?.request) || '';
+  }
+
+  const filteredHistoryData = useMemo(() => {
+    const searchFilter = searchId.trim().toLowerCase();
+    if (!searchFilter) return historyData;
+
+    return historyData.filter((influence: any) => {
+      const tiId = String(influence?.trafficInfluenceId ?? '').toLowerCase();
+      const subscriptionId = String(influence?.subscriptionId ?? '').toLowerCase();
+      const appId = String(getHistoryAppId(influence)).toLowerCase();
+      
+      return tiId.includes(searchFilter) || 
+             subscriptionId.includes(searchFilter) || 
+             appId.includes(searchFilter);
+    });
+  }, [historyData, searchId]);
 
   const [formData, setFormData] = useState({
     networkAccessIdentifier: '',
@@ -147,6 +200,48 @@ export default function TrafficInfluencePanel() {
     }
   };
 
+  async function fetchHistory() {
+    setHistoryLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: '100', skip: '0' });
+      if (filterId) {
+        params.append('trafficInfluenceId', filterId);
+      }
+      const response = await fetch(`/api/history/traffic-influence?${params}`);
+      const data = await response.json();
+      setHistoryData(data.data || []);
+    } catch (error) {
+      console.error('Failed to fetch history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  function handleHistorySearch() {
+    setFilterId(searchId);
+    fetchHistory();
+  }
+
+  function clearHistoryFilter() {
+    setSearchId('');
+    setFilterId('');
+    fetchHistory();
+  }
+
+  async function deleteHistoryItem(trafficInfluenceId: string) {
+    if (!confirm(`Delete traffic influence ${trafficInfluenceId}?`)) return;
+    try {
+      const response = await fetch(`/api/history/traffic-influence/${trafficInfluenceId}`, {
+        method: 'DELETE',
+      });
+      if (response.status === 204) {
+        fetchHistory();
+      }
+    } catch (error) {
+      console.error('Delete failed:', error);
+    }
+  }
+
   return (
     <div className="space-y-6 w-full">
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -155,12 +250,61 @@ export default function TrafficInfluencePanel() {
         {/* API Metrics */}
         <ApiMetrics apiName="Traffic Influence" />
 
-        {/* Request Logs */}
-        <LogsViewer apiName="Traffic Influence" />
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'overview'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('history');
+                if (!showHistory) {
+                  setShowHistory(true);
+                  fetchHistory();
+                }
+              }}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'history'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Traffic Influence History
+            </button>
+            <button
+              onClick={() => setActiveTab('flow')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'flow'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Flow Sequence
+            </button>
+            <button
+              onClick={() => setActiveTab('logs')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'logs'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Logs
+            </button>
+          </nav>
+        </div>
 
-        {/* Core Network Logs */}
-        <CoreLogsViewer apiName="Traffic Influence" />
-
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+        <>
       <form onSubmit={handleSubmit} className="space-y-4 mb-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -319,29 +463,31 @@ export default function TrafficInfluencePanel() {
           ) : (
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="font-medium text-gray-700">Subscription ID:</span>
+                <span className="font-medium text-gray-900">Subscription ID:</span>
                 <span className="text-gray-900 font-mono text-xs">{result.subscriptionId}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-medium text-gray-700">State:</span>
+                <span className="font-medium text-gray-900">State:</span>
                 <span className="text-green-600 font-semibold">{result.state}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-medium text-gray-700">App Server:</span>
+                <span className="font-medium text-gray-900">App Server:</span>
                 <span className="text-gray-900">{result.applicationServer.ipv4Address}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-medium text-gray-700">Created At:</span>
+                <span className="font-medium text-gray-900">Created At:</span>
                 <span className="text-gray-900">{new Date(result.createdAt).toLocaleString()}</span>
               </div>
             </div>
           )}
         </div>
       )}
-      </div>
 
-      {/* API Testing Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+        </>
+        )}
+
+        {/* API Testing Section */}
+        {/* <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold mb-4 text-gray-800">Test API Endpoints</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -395,17 +541,210 @@ export default function TrafficInfluencePanel() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
-      {/* Network Flow Visualization */}
-      {showVisualization && (
-        <EnhancedNetworkFlow 
-          apiType="traffic" 
-          requestData={requestData}
-          responseData={result}
-          onComplete={() => {}}
-        />
-      )}
+        {/* History Tab */}
+        {activeTab === 'history' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Database size={24} className="text-blue-600" />
+              <h3 className="text-xl font-semibold text-gray-800">Traffic Influence History</h3>
+            </div>
+            <button
+              onClick={fetchHistory}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            >
+              <RefreshCw size={18} />
+              Refresh
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Search by TI ID or App ID"
+                value={searchId}
+                onChange={(e) => setSearchId(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {searchId && (
+                <button
+                  onClick={() => setSearchId('')}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                onClick={fetchHistory}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2"
+              >
+                <RefreshCw size={18} />
+              </button>
+            </div>
+
+            {/* History Table */}
+            {historyLoading ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2 text-gray-900">Loading history...</p>
+              </div>
+            ) : filteredHistoryData.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-900">No traffic influences found in history</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">TI ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Operation</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">API Consumer</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">App ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timestamp</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredHistoryData.map((influence: any) => (
+                      <tr key={influence._id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm font-mono text-blue-600">
+                          {influence.trafficInfluenceId.substring(0, 8)}...
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            influence.operation === 'CREATE' ? 'bg-green-100 text-green-800' :
+                            influence.operation === 'DELETE' ? 'bg-red-100 text-red-800' :
+                            influence.operation === 'UPDATE' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {influence.operation}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{influence.response?.apiConsumerId || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{getHistoryAppId(influence) || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {new Date(influence.createdAt).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            influence.statusCode >= 200 && influence.statusCode < 300
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {influence.statusCode}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => setViewingInfluence(influence)}
+                              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded border border-blue-300 hover:border-blue-500 text-xs font-medium transition-colors"
+                              title="View Request/Response"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => deleteHistoryItem(influence.trafficInfluenceId)}
+                              className="text-red-600 hover:text-red-900 inline-flex items-center gap-1"
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* View Traffic Influence Modal */}
+          {viewingInfluence && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setViewingInfluence(null)}>
+              <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                  <h3 className="text-xl font-semibold text-gray-900">Traffic Influence Details</h3>
+                  <button
+                    onClick={() => setViewingInfluence(null)}
+                    className="text-gray-600 hover:text-gray-800 text-2xl font-bold leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Subscription Info</h4>
+                      <div className="bg-gray-50 rounded p-3 space-y-1 text-sm text-gray-900">
+                        <div><span className="font-medium text-gray-900">Traffic Influence ID:</span> <span className="font-mono text-xs text-gray-900">{viewingInfluence.trafficInfluenceId}</span></div>
+                        <div><span className="font-medium text-gray-900">Operation:</span> <span className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">{viewingInfluence.operation}</span></div>
+                        <div><span className="font-medium text-gray-900">Status:</span> <span className="px-2 py-0.5 rounded text-xs bg-green-100 text-green-800">{viewingInfluence.statusCode}</span></div>
+                        <div><span className="font-medium text-gray-900">Timestamp:</span> <span className="text-gray-900">{new Date(viewingInfluence.createdAt).toLocaleString()}</span></div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Request</h4>
+                      <div className="bg-gray-900 rounded p-4 overflow-x-auto">
+                        <pre className="text-xs text-green-300 font-mono">{JSON.stringify(viewingInfluence.request, null, 2)}</pre>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Response</h4>
+                      <div className="bg-gray-900 rounded p-4 overflow-x-auto">
+                        <pre className="text-xs text-green-300 font-mono">{JSON.stringify(viewingInfluence.response, null, 2)}</pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end p-4 border-t border-gray-200">
+                  <button
+                    onClick={() => setViewingInfluence(null)}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        )}
+
+        {/* Flow Sequence Tab */}
+        {activeTab === 'flow' && (
+        <div>
+          {showVisualization && result ? (
+            <EnhancedNetworkFlow 
+              apiType="traffic" 
+              requestData={requestData}
+              responseData={result}
+              onComplete={() => {}}
+            />
+          ) : (
+            <div className="text-center py-16 bg-gray-50 rounded-lg">
+              <p className="text-gray-600 text-lg mb-2">No flow sequence available</p>
+              <p className="text-gray-500 text-sm">Create a Traffic Influence subscription first to view the network flow visualization</p>
+            </div>
+          )}
+        </div>
+        )}
+
+        {/* Logs Tab */}
+        {activeTab === 'logs' && (
+        <div className="space-y-6">
+          <LogsViewer apiName="Traffic Influence" />
+          <CoreLogsViewer apiName="Traffic Influence" />
+        </div>
+        )}
+      </div>
     </div>
   );
 }

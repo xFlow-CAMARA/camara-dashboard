@@ -22,6 +22,9 @@ export default function NumberVerificationPanel() {
   const [testResult, setTestResult] = useState<any>(null);
   const [testLoading, setTestLoading] = useState(false);
   const [requestData, setRequestData] = useState<any>(null);
+  
+  // View tab state
+  const [viewTab, setViewTab] = useState<'overview' | 'flow' | 'logs'>('overview');
 
   const [formData, setFormData] = useState({
     phoneNumber: '',
@@ -226,12 +229,45 @@ export default function NumberVerificationPanel() {
         {/* API Metrics */}
         <ApiMetrics apiName="Number Verification" />
 
-        {/* Request Logs */}
-        <LogsViewer apiName="Number Verification" />
+        {/* View Tab Navigation */}
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setViewTab('overview')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                viewTab === 'overview'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setViewTab('flow')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                viewTab === 'flow'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Flow Sequence
+            </button>
+            <button
+              onClick={() => setViewTab('logs')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                viewTab === 'logs'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Logs
+            </button>
+          </nav>
+        </div>
 
-        {/* Core Network Logs */}
-        <CoreLogsViewer apiName="Number Verification" />
-
+        {/* Overview Tab */}
+        {viewTab === 'overview' && (
+        <>
         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -422,10 +458,11 @@ export default function NumberVerificationPanel() {
             )}
           </div>
         )}
-      </div>
+        </>
+        )}
 
       {/* API Testing Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      {/* <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold mb-4 text-gray-800">Test API Endpoints</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -479,17 +516,35 @@ export default function NumberVerificationPanel() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
-      {/* Network Flow Visualization */}
-      {showVisualization && (
-        <EnhancedNetworkFlow
-          apiType="number-verification"
-          requestData={requestData}
-          responseData={result}
-          onComplete={() => {}}
-        />
-      )}
+        {/* Flow Sequence Tab */}
+        {viewTab === 'flow' && (
+        <div>
+          {showVisualization && result ? (
+            <EnhancedNetworkFlow
+              apiType="number-verification"
+              requestData={requestData}
+              responseData={result}
+              onComplete={() => {}}
+            />
+          ) : (
+            <div className="text-center py-16 bg-gray-50 rounded-lg">
+              <p className="text-gray-600 text-lg mb-2">No flow sequence available</p>
+              <p className="text-gray-500 text-sm">Verify a phone number first to view the network flow visualization</p>
+            </div>
+          )}
+        </div>
+        )}
+
+        {/* Logs Tab */}
+        {viewTab === 'logs' && (
+        <div className="space-y-6">
+          <LogsViewer apiName="Number Verification" />
+          <CoreLogsViewer apiName="Number Verification" />
+        </div>
+        )}
+      </div>
     </div>
   );
 }

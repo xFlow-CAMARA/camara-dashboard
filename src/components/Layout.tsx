@@ -41,13 +41,13 @@ export default function Layout({ children }: LayoutProps) {
         </main>
 
         {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 mt-12">
+        {/* <footer className="bg-white border-t border-gray-200 mt-12">
           <div className="px-6 py-6">
             <p className="text-center text-sm text-gray-700">
               CAMARA API Dashboard • Powered by CoreSim 5G Simulator • {new Date().getFullYear()}
             </p>
           </div>
-        </footer>
+        </footer> */}
       </div>
     </div>
   );

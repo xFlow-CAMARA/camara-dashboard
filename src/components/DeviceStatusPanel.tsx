@@ -35,6 +35,9 @@ export default function DeviceStatusPanel() {
   const [activeTab, setActiveTab] = useState<'reachability' | 'roaming'>('reachability');
   const [testResult, setTestResult] = useState<any>(null);
   const [testLoading, setTestLoading] = useState(false);
+  
+  // View tab state
+  const [viewTab, setViewTab] = useState<'overview' | 'flow' | 'logs'>('overview');
 
   const [formData, setFormData] = useState({
     deviceIp: '',
@@ -267,12 +270,45 @@ export default function DeviceStatusPanel() {
         {/* API Metrics */}
         <ApiMetrics apiName="Device Status" />
 
-        {/* Request Logs */}
-        <LogsViewer apiName="Device Status" />
+        {/* View Tab Navigation */}
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setViewTab('overview')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                viewTab === 'overview'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setViewTab('flow')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                viewTab === 'flow'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Flow Sequence
+            </button>
+            <button
+              onClick={() => setViewTab('logs')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                viewTab === 'logs'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Logs
+            </button>
+          </nav>
+        </div>
 
-        {/* Core Network Logs */}
-        <CoreLogsViewer apiName="Device Status" />
-
+        {/* Overview Tab */}
+        {viewTab === 'overview' && (
+        <>
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-200 mb-6">
           <button
@@ -490,10 +526,9 @@ export default function DeviceStatusPanel() {
             )}
           </div>
         )}
-      </div>
 
       {/* API Testing Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      {/* <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold mb-4 text-gray-900">Test API Endpoints</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -547,7 +582,7 @@ export default function DeviceStatusPanel() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Status Legend */}
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -591,15 +626,36 @@ export default function DeviceStatusPanel() {
         </div>
       </div>
 
-      {/* Network Flow Visualization */}
-      {showVisualization && (
-        <EnhancedNetworkFlow
-          apiType="device-status"
-          requestData={requestData}
-          responseData={currentResult}
-          onComplete={() => {}}
-        />
-      )}
+        </>
+        )}
+
+        {/* Flow Sequence Tab */}
+        {viewTab === 'flow' && (
+        <div>
+          {showVisualization && currentResult ? (
+            <EnhancedNetworkFlow
+              apiType="device-status"
+              requestData={requestData}
+              responseData={currentResult}
+              onComplete={() => {}}
+            />
+          ) : (
+            <div className="text-center py-16 bg-gray-50 rounded-lg">
+              <p className="text-gray-600 text-lg mb-2">No flow sequence available</p>
+              <p className="text-gray-500 text-sm">Check device status first to view the network flow visualization</p>
+            </div>
+          )}
+        </div>
+        )}
+
+        {/* Logs Tab */}
+        {viewTab === 'logs' && (
+        <div className="space-y-6">
+          <LogsViewer apiName="Device Status" />
+          <CoreLogsViewer apiName="Device Status" />
+        </div>
+        )}
+      </div>
     </div>
   );
 }
