@@ -83,19 +83,51 @@ export default function NumberVerificationPanel() {
 
   // Calculate SHA-256 hash of phone number
   const calculateHash = async (phone: string) => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(phone);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
+    // Try client-side crypto.subtle first (requires secure context)
+    if (typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined') {
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(phone);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
+      } catch (err) {
+        console.warn('Client-side crypto failed, falling back to server-side:', err);
+      }
+    }
+    
+    // Fallback to server-side hash calculation
+    try {
+      const response = await fetch('/api/utils/hash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: phone }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Server-side hash calculation failed');
+      }
+      
+      const data = await response.json();
+      return data.hash;
+    } catch (err) {
+      console.error('Server-side hash calculation error:', err);
+      throw new Error('Failed to calculate hash. Please check your connection.');
+    }
   };
 
   const handleCalculateHash = async () => {
     if (hashInput) {
-      const hash = await calculateHash(hashInput);
-      setCalculatedHash(hash);
-      setFormData(prev => ({ ...prev, hashedPhoneNumber: hash }));
+      try {
+        const hash = await calculateHash(hashInput);
+        setCalculatedHash(hash);
+        setFormData(prev => ({ ...prev, hashedPhoneNumber: hash, useHashed: true }));
+        setError(null);
+      } catch (err: any) {
+        console.error('Hash calculation error:', err);
+        setError(err.message || 'Failed to calculate hash');
+      }
     }
   };
 
@@ -307,7 +339,11 @@ export default function NumberVerificationPanel() {
               <input
                 type="radio"
                 checked={!formData.useHashed}
-                onChange={() => setFormData(prev => ({ ...prev, useHashed: false }))}
+                onChange={() => {
+                  setFormData(prev => ({ ...prev, useHashed: false }));
+                  // Sync hashInput with current phone number when switching to plain mode
+                  setHashInput(formData.phoneNumber);
+                }}
                 className="mr-2"
               />
               <span className="text-sm text-gray-700">Plain text phone number</span>
@@ -316,7 +352,11 @@ export default function NumberVerificationPanel() {
               <input
                 type="radio"
                 checked={formData.useHashed}
-                onChange={() => setFormData(prev => ({ ...prev, useHashed: true }))}
+                onChange={() => {
+                  setFormData(prev => ({ ...prev, useHashed: true }));
+                  // Sync hashInput with current phone number when switching to hashed mode
+                  setHashInput(formData.phoneNumber);
+                }}
                 className="mr-2"
               />
               <span className="text-sm text-gray-700">Hashed phone number (SHA-256)</span>
@@ -331,7 +371,10 @@ export default function NumberVerificationPanel() {
               <input
                 type="text"
                 value={formData.phoneNumber}
-                onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, phoneNumber: e.target.value }));
+                  setHashInput(e.target.value);
+                }}
                 placeholder="+336100000000"
                 pattern="^\+[1-9][0-9]{4,14}$"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
