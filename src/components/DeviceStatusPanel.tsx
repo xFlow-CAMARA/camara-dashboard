@@ -246,21 +246,6 @@ export default function DeviceStatusPanel() {
     }
   };
 
-  // Get status icon
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-      case 'CONNECTED_DATA':
-      case 'CONNECTED':
-        return '📶';
-      case 'CONNECTED_SMS':
-        return '💬';
-      case 'NOT_CONNECTED':
-        return '📵';
-      default:
-        return '❓';
-    }
-  };
-
   const currentResult = activeTab === 'reachability' ? reachabilityResult : roamingResult;
 
   return (
@@ -319,7 +304,7 @@ export default function DeviceStatusPanel() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            📶 Reachability Status
+            Reachability Status
           </button>
           <button
             onClick={() => setActiveTab('roaming')}
@@ -329,7 +314,7 @@ export default function DeviceStatusPanel() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            🌍 Roaming Status
+            Roaming Status
           </button>
         </div>
 
@@ -390,7 +375,7 @@ export default function DeviceStatusPanel() {
                 disabled={loading || !formData.deviceIp}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Checking Reachability...' : '📶 Get Reachability Status'}
+                {loading ? 'Checking Reachability...' : 'Get Reachability Status'}
               </button>
             ) : (
               <button
@@ -399,7 +384,7 @@ export default function DeviceStatusPanel() {
                 disabled={loading || !formData.deviceIp}
                 className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Checking Roaming...' : '🌍 Get Roaming Status'}
+                {loading ? 'Checking Roaming...' : 'Get Roaming Status'}
               </button>
             )}
           </div>
@@ -420,7 +405,7 @@ export default function DeviceStatusPanel() {
           <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-lg font-semibold text-gray-900">
-                📶 Reachability Status (CAMARA Compliant)
+                Reachability Status (CAMARA Compliant)
               </h3>
               <button
                 onClick={() => setShowJson(!showJson)}
@@ -442,7 +427,7 @@ export default function DeviceStatusPanel() {
                 <div className="flex justify-between items-center p-3 bg-white rounded-md">
                   <span className="font-medium text-gray-800">Reachable:</span>
                   <span className={`font-semibold ${reachabilityResult.reachable ? 'text-green-600' : 'text-red-600'}`}>
-                    {reachabilityResult.reachable ? '✅ Yes' : '❌ No'}
+                    {reachabilityResult.reachable ? 'Yes' : 'No'}
                   </span>
                 </div>
                 {/* CAMARA Connectivity array */}
@@ -450,7 +435,7 @@ export default function DeviceStatusPanel() {
                   <div className="flex justify-between items-center p-3 bg-white rounded-md">
                     <span className="font-medium text-gray-800">Connectivity:</span>
                     <span className="font-semibold text-blue-600">
-                      {reachabilityResult.connectivity.map(c => c === 'DATA' ? '📶 DATA' : '💬 SMS').join(', ')}
+                      {reachabilityResult.connectivity.join(', ')}
                     </span>
                   </div>
                 )}
@@ -458,7 +443,7 @@ export default function DeviceStatusPanel() {
                 <div className="flex justify-between items-center p-3 bg-white rounded-md">
                   <span className="font-medium text-gray-800">Status:</span>
                   <span className={`font-semibold ${getStatusColor(getDisplayStatus(reachabilityResult))}`}>
-                    {getStatusIcon(getDisplayStatus(reachabilityResult))} {getDisplayStatus(reachabilityResult)}
+                    {getDisplayStatus(reachabilityResult)}
                   </span>
                 </div>
                 {reachabilityResult.lastStatusTime && (
@@ -486,7 +471,7 @@ export default function DeviceStatusPanel() {
           <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-lg font-semibold text-gray-900">
-                🌍 Roaming Status
+                Roaming Status
               </h3>
               <button
                 onClick={() => setShowJson(!showJson)}
@@ -507,7 +492,7 @@ export default function DeviceStatusPanel() {
                 <div className="flex justify-between items-center p-3 bg-white rounded-md">
                   <span className="font-medium text-gray-800">Roaming:</span>
                   <span className={`font-semibold ${roamingResult.roaming ? 'text-yellow-600' : 'text-green-600'}`}>
-                    {roamingResult.roaming ? '🌐 Yes - Device is roaming' : '🏠 No - Device is on home network'}
+                    {roamingResult.roaming ? 'Yes - Device is roaming' : 'No - Device is on home network'}
                   </span>
                 </div>
                 {roamingResult.countryCode && (
@@ -537,14 +522,14 @@ export default function DeviceStatusPanel() {
             disabled={testLoading || !formData.deviceIp}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
           >
-            📶 POST Reachability Status
+            POST Reachability Status
           </button>
           <button
             onClick={() => testEndpoint('ROAMING')}
             disabled={testLoading || !formData.deviceIp}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
           >
-            🌍 POST Roaming Status
+            POST Roaming Status
           </button>
         </div>
 
@@ -562,7 +547,7 @@ export default function DeviceStatusPanel() {
           }`}>
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-semibold text-gray-900">
-                {testResult.success ? '✓' : '✗'} {testResult.method}
+                {testResult.method}
               </h4>
               <span className={`text-sm px-2 py-1 rounded ${
                 testResult.success
@@ -592,17 +577,14 @@ export default function DeviceStatusPanel() {
             <h4 className="font-medium text-gray-900 mb-2">Reachability Status Values</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
-                <span>📶</span>
                 <span className="font-medium text-gray-900">CONNECTED_DATA</span>
                 <span className="text-gray-600">- Full connectivity</span>
               </div>
               <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded">
-                <span>💬</span>
                 <span className="font-medium text-gray-900">CONNECTED_SMS</span>
                 <span className="text-gray-600">- SMS only</span>
               </div>
               <div className="flex items-center gap-2 p-2 bg-red-50 rounded">
-                <span>📵</span>
                 <span className="font-medium text-gray-900">NOT_CONNECTED</span>
                 <span className="text-gray-600">- Offline</span>
               </div>
@@ -612,12 +594,10 @@ export default function DeviceStatusPanel() {
             <h4 className="font-medium text-gray-900 mb-2">Roaming Status</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
-                <span>🏠</span>
                 <span className="font-medium text-gray-900">Not Roaming</span>
                 <span className="text-gray-600">- Home network</span>
               </div>
               <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded">
-                <span>🌐</span>
                 <span className="font-medium text-gray-900">Roaming</span>
                 <span className="text-gray-600">- Foreign network</span>
               </div>

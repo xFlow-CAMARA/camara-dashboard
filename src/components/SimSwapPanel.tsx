@@ -208,7 +208,7 @@ export default function SimSwapPanel() {
   // Get risk level and color
   const getRiskInfo = (swapped: boolean, dateStr?: string | null) => {
     if (swapped) {
-      return { level: 'HIGH', color: 'red', icon: '🚨', message: 'SIM swap detected - fraud risk!' };
+      return { level: 'HIGH', color: 'red', message: 'SIM swap detected - fraud risk!' };
     }
     if (dateStr) {
       const swapDate = new Date(dateStr);
@@ -217,14 +217,14 @@ export default function SimSwapPanel() {
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       
       if (diffHours < 24) {
-        return { level: 'HIGH', color: 'red', icon: '🚨', message: 'SIM swapped within 24 hours!' };
+        return { level: 'HIGH', color: 'red', message: 'SIM swapped within 24 hours!' };
       } else if (diffHours < 72) {
-        return { level: 'MEDIUM', color: 'yellow', icon: '⚠️', message: 'SIM swapped within 3 days' };
+        return { level: 'MEDIUM', color: 'yellow', message: 'SIM swapped within 3 days' };
       } else if (diffHours < 240) {
-        return { level: 'ELEVATED', color: 'orange', icon: '⚡', message: 'SIM swapped within 10 days' };
+        return { level: 'ELEVATED', color: 'orange', message: 'SIM swapped within 10 days' };
       }
     }
-    return { level: 'LOW', color: 'green', icon: '✅', message: 'No recent SIM swap' };
+    return { level: 'LOW', color: 'green', message: 'No recent SIM swap' };
   };
 
   const currentResult = activeTab === 'check' ? checkResult : dateResult;
@@ -285,7 +285,7 @@ export default function SimSwapPanel() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            🔍 Check SIM Swap
+            Check SIM Swap
           </button>
           <button
             onClick={() => setActiveTab('retrieve')}
@@ -295,7 +295,7 @@ export default function SimSwapPanel() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            📅 Retrieve Swap Date
+            Retrieve Swap Date
           </button>
         </div>
 
@@ -372,7 +372,7 @@ export default function SimSwapPanel() {
                 disabled={loading || !formData.phoneNumber}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Checking SIM Swap...' : '🔍 Check SIM Swap'}
+                {loading ? 'Checking SIM Swap...' : 'Check SIM Swap'}
               </button>
             ) : (
               <button
@@ -381,7 +381,7 @@ export default function SimSwapPanel() {
                 disabled={loading || !formData.phoneNumber}
                 className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Retrieving Date...' : '📅 Retrieve Swap Date'}
+                {loading ? 'Retrieving Date...' : 'Retrieve Swap Date'}
               </button>
             )}
           </div>
@@ -406,7 +406,7 @@ export default function SimSwapPanel() {
           }`}>
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-lg font-semibold text-gray-900">
-                {checkResult.swapped ? '🚨' : '✅'} SIM Swap Check Result
+                SIM Swap Check Result
               </h3>
               <button
                 onClick={() => setShowJson(!showJson)}
@@ -429,7 +429,7 @@ export default function SimSwapPanel() {
                 <div className="flex justify-between items-center p-3 bg-white rounded-md">
                   <span className="font-medium text-gray-800">SIM Swapped:</span>
                   <span className={`font-semibold ${checkResult.swapped ? 'text-red-600' : 'text-green-600'}`}>
-                    {checkResult.swapped ? '🚨 Yes - SIM swap detected!' : '✅ No - No recent swap'}
+                    {checkResult.swapped ? 'Yes - SIM swap detected!' : 'No - No recent swap'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white rounded-md">
@@ -443,13 +443,13 @@ export default function SimSwapPanel() {
                     getRiskInfo(checkResult.swapped).color === 'yellow' ? 'text-yellow-600' :
                     'text-green-600'
                   }`}>
-                    {getRiskInfo(checkResult.swapped).icon} {getRiskInfo(checkResult.swapped).level}
+                    {getRiskInfo(checkResult.swapped).level}
                   </span>
                 </div>
                 {checkResult.swapped && (
                   <div className="p-3 bg-red-100 rounded-md">
                     <p className="text-xs text-red-800">
-                      <strong>⚠️ Fraud Prevention Alert:</strong><br />
+                      <strong>Fraud Prevention Alert:</strong><br />
                       A SIM swap was detected. Consider additional verification before proceeding with sensitive operations like password resets or high-value transactions.
                     </p>
                   </div>
@@ -463,7 +463,7 @@ export default function SimSwapPanel() {
           <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-lg font-semibold text-gray-900">
-                📅 SIM Swap Date Information
+                SIM Swap Date Information
               </h3>
               <button
                 onClick={() => setShowJson(!showJson)}
@@ -512,7 +512,7 @@ export default function SimSwapPanel() {
                         risk.color === 'orange' ? 'text-orange-600' :
                         'text-green-600'
                       }`}>
-                        {risk.icon} {risk.level} - {risk.message}
+                        {risk.level} - {risk.message}
                       </span>
                     );
                   })()}
@@ -532,14 +532,14 @@ export default function SimSwapPanel() {
             disabled={testLoading || !formData.phoneNumber}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
           >
-            🔍 POST Check SIM Swap
+            POST Check SIM Swap
           </button>
           <button
             onClick={() => testEndpoint('RETRIEVE')}
             disabled={testLoading || !formData.phoneNumber}
             className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
           >
-            📅 POST Retrieve Date
+            POST Retrieve Date
           </button>
         </div>
 
@@ -557,7 +557,7 @@ export default function SimSwapPanel() {
           }`}>
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-semibold text-gray-900">
-                {testResult.success ? '✓' : '✗'} {testResult.method}
+                {testResult.method}
               </h4>
               <span className={`text-sm px-2 py-1 rounded ${
                 testResult.success
@@ -587,22 +587,18 @@ export default function SimSwapPanel() {
             <h4 className="font-medium text-gray-900 mb-2">Risk Levels</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 p-2 bg-red-50 rounded">
-                <span>🚨</span>
                 <span className="font-medium text-gray-900">HIGH RISK</span>
                 <span className="text-gray-600">- SIM swap &lt; 24 hours</span>
               </div>
               <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded">
-                <span>⚠️</span>
                 <span className="font-medium text-gray-900">MEDIUM RISK</span>
                 <span className="text-gray-600">- SIM swap &lt; 3 days</span>
               </div>
               <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
-                <span>⚡</span>
                 <span className="font-medium text-gray-900">ELEVATED</span>
                 <span className="text-gray-600">- SIM swap &lt; 10 days</span>
               </div>
               <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
-                <span>✅</span>
                 <span className="font-medium text-gray-900">LOW RISK</span>
                 <span className="text-gray-600">- No recent swap</span>
               </div>
@@ -612,17 +608,14 @@ export default function SimSwapPanel() {
             <h4 className="font-medium text-gray-900 mb-2">Use Cases</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
-                <span>🏦</span>
                 <span className="font-medium text-gray-900">Banking</span>
                 <span className="text-gray-600">- Verify before transactions</span>
               </div>
               <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
-                <span>🔐</span>
                 <span className="font-medium text-gray-900">2FA</span>
                 <span className="text-gray-600">- Strengthen SMS OTP</span>
               </div>
               <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
-                <span>📱</span>
                 <span className="font-medium text-gray-900">Account Recovery</span>
                 <span className="text-gray-600">- Extra verification</span>
               </div>
