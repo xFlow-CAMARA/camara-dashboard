@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   lint-build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, camara-vm]
     timeout-minutes: 15
     env:
       NEXT_TELEMETRY_DISABLED: "1"
