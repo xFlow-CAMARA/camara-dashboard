@@ -23,7 +23,6 @@ function PlaygroundInner() {
   /* issued token (from "Request Token" button) */
   const [issuedToken,    setIssuedToken]    = useState('');
   const [tokenExpiresAt, setTokenExpiresAt] = useState<number | null>(null);
-  const [tokenExpiresIn, setTokenExpiresIn] = useState<number | null>(null);
   const [tokenStatus,    setTokenStatus]    = useState<'idle' | 'fetching' | 'ready' | 'error'>('idle');
   const [tokenError,     setTokenError]     = useState('');
 
@@ -66,20 +65,11 @@ function PlaygroundInner() {
     setTokenError('');
   }, [selectedScope]);
 
-  /* tick expiry */
-  useEffect(() => {
-    if (!tokenExpiresAt) { setTokenExpiresIn(null); return; }
-    const id = setInterval(() => {
-      const s = Math.max(0, Math.round((tokenExpiresAt - Date.now()) / 1000));
-      setTokenExpiresIn(s);
-      if (s === 0) {
-        setIssuedToken('');
-        setTokenExpiresAt(null);
-        setTokenStatus('idle');
-      }
-    }, 1000);
-    return () => clearInterval(id);
-  }, [tokenExpiresAt]);
+  const onTokenExpired = useCallback(() => {
+    setIssuedToken('');
+    setTokenExpiresAt(null);
+    setTokenStatus('idle');
+  }, []);
 
   const applyEndpoint = (e: ApiEndpoint) => {
     setMethod(e.method);
@@ -179,7 +169,7 @@ function PlaygroundInner() {
             tokenStatus === 'fetching' ? 'fetching' :
             tokenStatus === 'error'    ? 'error'    : 'none'
           }
-          tokenExpiresIn={tokenExpiresIn}
+          tokenExpiresAt={tokenExpiresAt}
           onInvokerChange={setSelectedInvokerId}
           onScopeChange={setSelectedScope}
         />
@@ -188,10 +178,11 @@ function PlaygroundInner() {
           appName={selectedInvoker?.invoker_name ?? ''}
           scope={selectedScope}
           token={issuedToken}
-          expiresIn={tokenExpiresIn}
+          expiresAt={tokenExpiresAt}
           status={tokenStatus}
           errorMessage={tokenError}
           onRequest={handleRequestToken}
+          onExpired={onTokenExpired}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-4">

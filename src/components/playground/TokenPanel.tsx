@@ -1,19 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import TokenCountdown from './TokenCountdown';
 
 interface Props {
   scope:        string;
   appName:      string;
   token:        string;
-  expiresIn:    number | null;       // seconds remaining
+  expiresAt:    number | null;       // epoch ms
   status:       'idle' | 'fetching' | 'ready' | 'error';
   errorMessage: string;
   onRequest:    () => void;
+  onExpired?:   () => void;
 }
 
 export default function TokenPanel({
-  scope, appName, token, expiresIn, status, errorMessage, onRequest,
+  scope, appName, token, expiresAt, status, errorMessage, onRequest, onExpired,
 }: Props) {
   const [copied, setCopied] = useState(false);
 
@@ -52,7 +54,9 @@ export default function TokenPanel({
       {token && (
         <div className="mt-2 rounded-md bg-white border border-indigo-200 overflow-hidden">
           <div className="flex items-center justify-between px-3 py-1.5 bg-indigo-100 text-xs">
-            <span className="font-medium text-indigo-900">Bearer · expires in {expiresIn ?? '—'}s</span>
+            <span className="font-medium text-indigo-900">
+              Bearer · expires in <TokenCountdown expiresAt={expiresAt} onExpired={onExpired} />
+            </span>
             <button
               onClick={copy}
               className="text-indigo-700 hover:text-indigo-900 font-medium"

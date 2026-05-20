@@ -1,5 +1,6 @@
 'use client';
 
+import TokenCountdown from './TokenCountdown';
 import type { InvokerSummary } from './types';
 
 interface Props {
@@ -7,14 +8,14 @@ interface Props {
   selectedInvokerId: string;
   selectedScope:     string;
   tokenStatus:       'none' | 'fetching' | 'valid' | 'error';
-  tokenExpiresIn?:   number | null;
+  tokenExpiresAt?:   number | null;
   onInvokerChange:   (id: string) => void;
   onScopeChange:     (scope: string) => void;
 }
 
 export default function Toolbar({
   invokers, selectedInvokerId, selectedScope,
-  tokenStatus, tokenExpiresIn,
+  tokenStatus, tokenExpiresAt,
   onInvokerChange, onScopeChange,
 }: Props) {
   const selectedInvoker = invokers.find(i => i.invoker_id === selectedInvokerId);
@@ -55,7 +56,7 @@ export default function Toolbar({
 
       <div className="flex items-center gap-2 text-xs text-slate-600">
         <span className={`inline-block w-2 h-2 rounded-full ${tokenDot}`} />
-        {tokenStatus === 'valid'    && <span>Token active{tokenExpiresIn ? ` · ${tokenExpiresIn}s` : ''}</span>}
+        {tokenStatus === 'valid'    && <span>Token active · <TokenCountdown expiresAt={tokenExpiresAt ?? null} /></span>}
         {tokenStatus === 'fetching' && <span>Fetching token…</span>}
         {tokenStatus === 'error'    && <span className="text-rose-600">Token error</span>}
         {tokenStatus === 'none'     && <span>No token yet</span>}

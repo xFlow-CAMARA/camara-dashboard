@@ -1,10 +1,21 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
+const APP_ENV = process.env.APP_ENV || 'dev';
+
+/** Read an env var that may have a dev fallback. Throws in non-dev environments. */
+function required(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (APP_ENV === 'dev') return devDefault;
+  throw new Error(`${name} env var is required when APP_ENV != 'dev'`);
+}
+
 const KEYCLOAK_URL    = process.env.KEYCLOAK_INTERNAL_URL || 'http://keycloak:8080';
 const REALM           = process.env.KEYCLOAK_REALM        || 'camara';
 const KEYCLOAK_CLIENT = process.env.KEYCLOAK_CLIENT_ID    || 'camara-dashboard-app';
-const KEYCLOAK_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || 'dashboard-secret-2026';
+const KEYCLOAK_SECRET = required('KEYCLOAK_CLIENT_SECRET', 'dashboard-secret-2026');
+const NEXTAUTH_SECRET = required('NEXTAUTH_SECRET',        'dev-secret-replace-me');
 
 interface KeycloakAccessTokenPayload {
   realm_access?: { roles?: string[] };
@@ -30,11 +41,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
-          console.log('[auth] missing username/password');
-          return null;
-        }
-        console.log('[auth] authorize start', credentials.username);
+        if (!credentials?.username || !credentials?.password) return null;
 
         const body = new URLSearchParams({
           grant_type:    'password',
@@ -50,14 +57,9 @@ export const authOptions: NextAuthOptions = {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body,
           });
-          if (!r.ok) {
-            const text = await r.text();
-            console.log('[auth] keycloak rejected:', r.status, text);
-            return null;
-          }
+          if (!r.ok) return null;
           const tokenData = await r.json();
           const claims = decodeJwt(tokenData.access_token);
-          console.log('[auth] success roles=', claims.realm_access?.roles);
           return {
             id:           claims.preferred_username || credentials.username,
             name:         claims.preferred_username || credentials.username,
@@ -65,9 +67,8 @@ export const authOptions: NextAuthOptions = {
             roles:        claims.realm_access?.roles ?? [],
             accessToken:  tokenData.access_token,
             refreshToken: tokenData.refresh_token,
-          } as never;
-        } catch (e) {
-          console.log('[auth] exception:', e);
+          };
+        } catch {
           return null;
         }
       },
@@ -77,10 +78,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const u = user as unknown as { roles?: string[]; accessToken?: string; refreshToken?: string };
-        token.roles        = u.roles;
-        token.accessToken  = u.accessToken;
-        token.refreshToken = u.refreshToken;
+        token.roles        = user.roles;
+        token.accessToken  = user.accessToken;
+        token.refreshToken = user.refreshToken;
       }
       return token;
     },
@@ -95,5 +95,5 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: { signIn: '/login' },
-  secret: process.env.NEXTAUTH_SECRET || 'dev-secret-replace-me',
+  secret: NEXTAUTH_SECRET,
 };
