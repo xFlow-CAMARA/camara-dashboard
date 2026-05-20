@@ -12,10 +12,11 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status');
-  const url = status
-    ? `${ONBOARDING_URL}/admin/invokers?status=${encodeURIComponent(status)}`
-    : `${ONBOARDING_URL}/admin/invokers`;
+  const qs = new URLSearchParams();
+  if (searchParams.get('status')) qs.set('status', searchParams.get('status')!);
+  if (searchParams.get('limit'))  qs.set('limit',  searchParams.get('limit')!);
+  if (searchParams.get('skip'))   qs.set('skip',   searchParams.get('skip')!);
+  const url = `${ONBOARDING_URL}/admin/invokers${qs.toString() ? '?' + qs.toString() : ''}`;
 
   const headers: Record<string, string> = {};
   if (ADMIN_API_KEY) headers['X-Admin-Api-Key'] = ADMIN_API_KEY;

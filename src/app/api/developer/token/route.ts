@@ -37,14 +37,8 @@ export async function POST(request: Request) {
 
     const isAdmin = session.user.roles?.includes('admin') ?? false;
     if (!isAdmin) {
-      const r = await fetch(`${ONBOARDING_URL}/invokers/${encodeURIComponent(client_id)}`,
-        { cache: 'no-store', headers: devHeaders() });
-      if (!r.ok) {
-        return NextResponse.json({ error: 'Unknown invoker' }, { status: 404 });
-      }
-      // The status endpoint hides sensitive fields, but `invoker_id` is enough — we
-      // need to confirm the *owner*. Fetch the by-email list for the session user
-      // and verify it contains this client_id.
+      // Single round-trip: if the by-email list contains the client_id,
+      // the invoker both exists AND belongs to this user.
       const mineR = await fetch(
         `${ONBOARDING_URL}/invokers/by-email/${encodeURIComponent(session.user.email)}`,
         { cache: 'no-store', headers: devHeaders() },

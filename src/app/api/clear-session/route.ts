@@ -1,6 +1,22 @@
 import { NextResponse } from 'next/server';
 
-const ALLOWED_ORIGIN = process.env.NEXTAUTH_URL || '';
+const APP_ENV       = process.env.APP_ENV      || 'dev';
+const NEXTAUTH_URL  = process.env.NEXTAUTH_URL || '';
+
+/**
+ * `NEXTAUTH_URL` MUST be set in any deployment so we can verify same-origin.
+ * In `APP_ENV=dev` we fall back to localhost — otherwise an unset value would
+ * silently 403 every request and the clear-site-data sign-out flow would
+ * break invisibly. Module-load guard keeps the failure loud, not quiet.
+ */
+function resolveAllowedOrigin(): string {
+  if (NEXTAUTH_URL) return NEXTAUTH_URL;
+  if (APP_ENV === 'dev') return 'http://localhost:3100';
+  throw new Error(
+    'NEXTAUTH_URL must be set when APP_ENV != "dev" — required for clear-session same-origin check',
+  );
+}
+const ALLOWED_ORIGIN: string = resolveAllowedOrigin();
 
 /**
  * Called from the client right after signOut() returns.
@@ -17,8 +33,8 @@ export async function POST(request: Request) {
   const referer = request.headers.get('referer');
 
   const fromAllowed =
-    (ALLOWED_ORIGIN && origin  === ALLOWED_ORIGIN) ||
-    (ALLOWED_ORIGIN && referer?.startsWith(ALLOWED_ORIGIN));
+    origin  === ALLOWED_ORIGIN ||
+    !!(referer && referer.startsWith(ALLOWED_ORIGIN));
 
   if (!fromAllowed) {
     return NextResponse.json({ error: 'Cross-origin not allowed' }, { status: 403 });

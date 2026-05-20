@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
+import { getScopes } from '@/lib/scopes';
 
 const KONG_URL = process.env.KONG_INTERNAL_URL || 'http://kong-gateway:8000';
-
-/** Only CAMARA API path prefixes can be sent through this proxy. */
-const ALLOWED_PREFIXES = [
-  '/quality-on-demand/',
-  '/location-retrieval/',
-  '/traffic-influence/',
-  '/number-verification/',
-  '/device-status/',
-  '/device-reachability-status/',
-  '/sim-swap/',
-];
 
 const ALLOWED_METHODS = new Set(['GET', 'POST', 'PUT', 'DELETE']);
 
@@ -38,9 +28,21 @@ export async function POST(request: Request) {
     }
 
     const clean = path.startsWith('/') ? path : `/${path}`;
-    if (!ALLOWED_PREFIXES.some(p => clean.startsWith(p))) {
+
+    // Block path-traversal both raw and URL-encoded. Allowlist by prefix would
+    // otherwise approve `/quality-on-demand/v1/../../admin/...` and the like.
+    if (/(\.\.|%2e%2e|%2f%2f)/i.test(clean) || clean.includes('//')) {
       return NextResponse.json(
-        { error: 'Path not allowed via portal', allowed: ALLOWED_PREFIXES },
+        { error: 'Path contains traversal or double slashes' },
+        { status: 400 },
+      );
+    }
+
+    const scopes = await getScopes();
+    const allowed = scopes.map(s => `/${s}/`);
+    if (!allowed.some(p => clean.startsWith(p))) {
+      return NextResponse.json(
+        { error: 'Path not allowed via portal', allowed },
         { status: 403 },
       );
     }

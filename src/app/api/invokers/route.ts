@@ -5,9 +5,10 @@ import { authOptions } from '@/lib/auth/options';
 const ONBOARDING_URL = process.env.INVOKER_ONBOARDING_URL || 'http://invoker-onboarding:8080';
 const DEV_API_KEY    = process.env.INVOKER_DEV_API_KEY    || '';
 
-function devHeaders(extra: Record<string, string> = {}): Record<string, string> {
+function devHeaders(extra: Record<string, string> = {}, actor?: string): Record<string, string> {
   const h = { ...extra };
   if (DEV_API_KEY) h['X-Dev-Api-Key'] = DEV_API_KEY;
+  if (actor)       h['X-Actor']       = actor;
   return h;
 }
 
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
 
     const r = await fetch(`${ONBOARDING_URL}/invokers`, {
       method:  'POST',
-      headers: devHeaders({ 'Content-Type': 'application/json' }),
+      headers: devHeaders({ 'Content-Type': 'application/json' }, session.user.email ?? undefined),
       body:    JSON.stringify(merged),
     });
     const data = await r.json();
