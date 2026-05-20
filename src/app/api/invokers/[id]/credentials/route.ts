@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
 
 const ONBOARDING_URL = process.env.INVOKER_ONBOARDING_URL || 'http://invoker-onboarding:8080';
+const DEV_API_KEY    = process.env.INVOKER_DEV_API_KEY    || '';
+
+function devHeaders(): Record<string, string> {
+  return DEV_API_KEY ? { 'X-Dev-Api-Key': DEV_API_KEY } : {};
+}
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -11,22 +16,26 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   }
 
   try {
-    // Verify the invoker belongs to this user (or user is admin)
     const isAdmin = session.user.roles?.includes('admin');
-    const statusR = await fetch(`${ONBOARDING_URL}/invokers/${params.id}`, { cache: 'no-store' });
+    const statusR = await fetch(`${ONBOARDING_URL}/invokers/${params.id}`,
+      { cache: 'no-store', headers: devHeaders() });
     if (!statusR.ok) {
       const data = await statusR.json().catch(() => ({}));
       return NextResponse.json(data, { status: statusR.status });
     }
 
     if (!isAdmin) {
-      const myList = await fetch(`${ONBOARDING_URL}/invokers/by-email/${encodeURIComponent(session.user.email ?? '')}`, { cache: 'no-store' });
+      const myList = await fetch(
+        `${ONBOARDING_URL}/invokers/by-email/${encodeURIComponent(session.user.email ?? '')}`,
+        { cache: 'no-store', headers: devHeaders() },
+      );
       const mine = await myList.json();
       const owns = Array.isArray(mine) && mine.some((i: { invoker_id: string }) => i.invoker_id === params.id);
       if (!owns) return NextResponse.json({ error: 'Forbidden — not your invoker' }, { status: 403 });
     }
 
-    const r = await fetch(`${ONBOARDING_URL}/invokers/${params.id}/credentials`, { cache: 'no-store' });
+    const r = await fetch(`${ONBOARDING_URL}/invokers/${params.id}/credentials`,
+      { cache: 'no-store', headers: devHeaders() });
     const data = await r.json();
     return NextResponse.json(data, { status: r.status });
   } catch (e) {

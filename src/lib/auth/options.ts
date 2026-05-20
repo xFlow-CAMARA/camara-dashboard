@@ -61,12 +61,10 @@ export const authOptions: NextAuthOptions = {
           const tokenData = await r.json();
           const claims = decodeJwt(tokenData.access_token);
           return {
-            id:           claims.preferred_username || credentials.username,
-            name:         claims.preferred_username || credentials.username,
-            email:        claims.email || credentials.username,
-            roles:        claims.realm_access?.roles ?? [],
-            accessToken:  tokenData.access_token,
-            refreshToken: tokenData.refresh_token,
+            id:    claims.preferred_username || credentials.username,
+            name:  claims.preferred_username || credentials.username,
+            email: claims.email || credentials.username,
+            roles: claims.realm_access?.roles ?? [],
           };
         } catch {
           return null;
@@ -78,9 +76,11 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.roles        = user.roles;
-        token.accessToken  = user.accessToken;
-        token.refreshToken = user.refreshToken;
+        token.roles = user.roles;
+        // accessToken/refreshToken from Keycloak deliberately NOT persisted:
+        // they expire in minutes and we don't run a refresh loop. Anything
+        // that needs a fresh Keycloak token requests one on demand (see the
+        // playground's /api/developer/token route).
       }
       return token;
     },
@@ -90,7 +90,6 @@ export const authOptions: NextAuthOptions = {
         email: (token.email as string | undefined) ?? session.user?.email,
         roles: (token.roles as string[]) ?? [],
       };
-      session.accessToken = token.accessToken as string | undefined;
       return session;
     },
   },

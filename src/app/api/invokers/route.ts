@@ -3,20 +3,25 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
 
 const ONBOARDING_URL = process.env.INVOKER_ONBOARDING_URL || 'http://invoker-onboarding:8080';
+const DEV_API_KEY    = process.env.INVOKER_DEV_API_KEY    || '';
+
+function devHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const h = { ...extra };
+  if (DEV_API_KEY) h['X-Dev-Api-Key'] = DEV_API_KEY;
+  return h;
+}
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
-  // Single invoker by id
   if (id) {
     try {
-      const r = await fetch(`${ONBOARDING_URL}/invokers/${encodeURIComponent(id)}`, { cache: 'no-store' });
+      const r = await fetch(`${ONBOARDING_URL}/invokers/${encodeURIComponent(id)}`,
+        { cache: 'no-store', headers: devHeaders() });
       const data = await r.json();
       return NextResponse.json(data, { status: r.status });
     } catch (e) {
@@ -24,12 +29,12 @@ export async function GET(request: Request) {
     }
   }
 
-  // List by logged-in user (admins go via /api/admin/invokers; this is dev-side)
   const email = session.user.email ?? '';
   if (!email) return NextResponse.json([], { status: 200 });
 
   try {
-    const r = await fetch(`${ONBOARDING_URL}/invokers/by-email/${encodeURIComponent(email)}`, { cache: 'no-store' });
+    const r = await fetch(`${ONBOARDING_URL}/invokers/by-email/${encodeURIComponent(email)}`,
+      { cache: 'no-store', headers: devHeaders() });
     if (r.status === 404) return NextResponse.json([], { status: 200 });
     const data = await r.json();
     return NextResponse.json(data, { status: r.status });
@@ -40,9 +45,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const body = await request.json();
@@ -50,9 +53,9 @@ export async function POST(request: Request) {
     const merged = { ...body, contact_email: session.user.email };
 
     const r = await fetch(`${ONBOARDING_URL}/invokers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(merged),
+      method:  'POST',
+      headers: devHeaders({ 'Content-Type': 'application/json' }),
+      body:    JSON.stringify(merged),
     });
     const data = await r.json();
     return NextResponse.json(data, { status: r.status });

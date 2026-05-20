@@ -42,8 +42,11 @@ function GlobalAuthEnforcer() {
 }
 
 export default function SessionWrapper({ children }: { children: React.ReactNode }) {
+  // Refetch on focus is enough — interval polling would hammer /api/auth/session
+  // for every idle tab. The bfcache-restore + visibility listeners cover the
+  // realistic "did the session go away while I was away" case.
   return (
-    <SessionProvider refetchOnWindowFocus refetchInterval={60}>
+    <SessionProvider refetchOnWindowFocus>
       <GlobalAuthEnforcer />
       {children}
     </SessionProvider>
