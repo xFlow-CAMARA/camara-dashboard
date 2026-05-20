@@ -29,16 +29,34 @@ export async function POST(request: Request) {
 
     const clean = path.startsWith('/') ? path : `/${path}`;
 
-    // Block path-traversal both raw and URL-encoded. Allowlist by prefix would
-    // otherwise approve `/quality-on-demand/v1/../../admin/...` and the like.
-    if (/(\.\.|%2e%2e|%2f%2f)/i.test(clean) || clean.includes('//')) {
+    // Block path-traversal: decode up to two layers so we catch single-
+    // (%2e%2e) and double-encoded (%252e%252e) variants. Anything that
+    // changes shape across a single decode is also suspicious — reject it.
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(decodeURIComponent(clean));
+    } catch {
+      return NextResponse.json({ error: 'Malformed URL encoding' }, { status: 400 });
+    }
+    if (
+      /\.\.|\/\//.test(decoded) ||
+      decoded !== decodeURIComponent(clean)   // path changed shape after one decode → suspicious
+    ) {
       return NextResponse.json(
-        { error: 'Path contains traversal or double slashes' },
+        { error: 'Path contains traversal or re-encoded segments' },
         { status: 400 },
       );
     }
 
-    const scopes = await getScopes();
+    let scopes: string[];
+    try {
+      scopes = await getScopes();
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'Scope catalog unavailable — try again shortly' },
+        { status: 503 },
+      );
+    }
     const allowed = scopes.map(s => `/${s}/`);
     if (!allowed.some(p => clean.startsWith(p))) {
       return NextResponse.json(

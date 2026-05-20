@@ -16,6 +16,7 @@ export async function GET(request: Request) {
   if (searchParams.get('invoker_id')) params.set('invoker_id', searchParams.get('invoker_id')!);
   if (searchParams.get('action'))     params.set('action',     searchParams.get('action')!);
   if (searchParams.get('limit'))      params.set('limit',      searchParams.get('limit')!);
+  if (searchParams.get('skip'))       params.set('skip',       searchParams.get('skip')!);
 
   const qs = params.toString();
   const url = `${ONBOARDING_URL}/admin/audit${qs ? '?' + qs : ''}`;
