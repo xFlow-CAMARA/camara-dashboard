@@ -5,8 +5,11 @@ import { authOptions } from '@/lib/auth/options';
 const ONBOARDING_URL = process.env.INVOKER_ONBOARDING_URL || 'http://invoker-onboarding:8080';
 const DEV_API_KEY    = process.env.INVOKER_DEV_API_KEY    || '';
 
-function devHeaders(): Record<string, string> {
-  return DEV_API_KEY ? { 'X-Dev-Api-Key': DEV_API_KEY } : {};
+function devHeaders(actor?: string): Record<string, string> {
+  const h: Record<string, string> = {};
+  if (DEV_API_KEY) h['X-Dev-Api-Key'] = DEV_API_KEY;
+  if (actor)       h['X-Actor']       = actor;
+  return h;
 }
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
@@ -35,7 +38,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     }
 
     const r = await fetch(`${ONBOARDING_URL}/invokers/${params.id}/credentials`,
-      { cache: 'no-store', headers: devHeaders() });
+      { cache: 'no-store', headers: devHeaders(session.user.email ?? undefined) });
     const data = await r.json();
     return NextResponse.json(data, { status: r.status });
   } catch (e) {

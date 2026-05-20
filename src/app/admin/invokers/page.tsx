@@ -82,7 +82,21 @@ function AdminInvokersPageInner() {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.detail || data.error || r.statusText);
-      setActionResult({ ok: true, msg: `Approved. Keycloak client: ${data.keycloak_client_id}  Secret: ${data.keycloak_secret}` });
+
+      // The approve response no longer carries the secret (it would otherwise
+      // sit in HTTP access logs forever). Fetch it via /credentials, which
+      // records an audit row for the reveal.
+      let secretLine = '';
+      try {
+        const credR = await fetch(`/api/invokers/${selected.invoker_id}/credentials`);
+        const cred  = await credR.json();
+        if (credR.ok && cred.keycloak_secret) secretLine = `\nSecret: ${cred.keycloak_secret}`;
+      } catch { /* secret can still be fetched later from developer status */ }
+
+      setActionResult({
+        ok: true,
+        msg: `Approved. Keycloak client: ${data.keycloak_client_id}${secretLine}`,
+      });
       load();
     } catch (e: unknown) {
       setActionResult({ ok: false, msg: e instanceof Error ? e.message : String(e) });
