@@ -34,7 +34,10 @@ const STATUS_BADGE: Record<string, string> = {
 
 function AdminInvokersPageInner() {
   const [filter, setFilter] = useState('pending');
+  const PAGE_SIZE = 25;
+  const [page, setPage] = useState(0);
   const [invokers, setInvokers] = useState<Invoker[]>([]);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Invoker | null>(null);
 
@@ -51,17 +54,28 @@ function AdminInvokersPageInner() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch(`/api/admin/invokers${filter ? `?status=${filter}` : ''}`);
+      // Fetch one extra row so we know whether a next page exists without
+      // a separate count query.
+      const skip  = page * PAGE_SIZE;
+      const limit = PAGE_SIZE + 1;
+      const qs    = new URLSearchParams({ limit: String(limit), skip: String(skip) });
+      if (filter) qs.set('status', filter);
+      const r = await fetch(`/api/admin/invokers?${qs.toString()}`);
       const data = await r.json();
-      setInvokers(Array.isArray(data) ? data : []);
+      const rows = Array.isArray(data) ? data : [];
+      setHasMore(rows.length > PAGE_SIZE);
+      setInvokers(rows.slice(0, PAGE_SIZE));
     } catch {
-      setInvokers([]);
+      setInvokers([]); setHasMore(false);
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, page]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Filter change resets to page 0
+  useEffect(() => { setPage(0); }, [filter]);
 
   const openApprove = (inv: Invoker) => {
     setSelected(inv);
@@ -263,6 +277,28 @@ function AdminInvokersPageInner() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination controls — visible only when we have any data */}
+        {invokers.length > 0 && (
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <span>
+              Showing {page * PAGE_SIZE + 1}–{page * PAGE_SIZE + invokers.length}
+              {hasMore ? '' : ' (end)'}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="px-3 py-1 rounded border bg-white disabled:opacity-40"
+              >← Prev</button>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={!hasMore}
+                className="px-3 py-1 rounded border bg-white disabled:opacity-40"
+              >Next →</button>
+            </div>
           </div>
         )}
       </div>

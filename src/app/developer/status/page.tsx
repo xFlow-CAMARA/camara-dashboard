@@ -53,7 +53,11 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
   const isApproved = inv.approval_status === 'approved';
 
   // Per-invoker state
-  const [credentials, setCredentials] = useState<{ keycloak_client_id?: string; keycloak_secret?: string } | null>(null);
+  const [credentials, setCredentials] = useState<{
+    keycloak_client_id?: string;
+    keycloak_secret?:    string;
+    previous_reveal?:    { at: string; actor: string } | null;
+  } | null>(null);
   const [showSecret, setShowSecret]   = useState(false);
   const [credLoading, setCredLoading] = useState(false);
   const [selectedScope, setSelectedScope] = useState((inv.scopes_approved ?? [])[0] ?? '');
@@ -179,6 +183,13 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
                   className="text-xs text-blue-600 hover:underline"
                 >Copy</button>
               </div>
+              {credentials.previous_reveal && (
+                <p className="text-[11px] text-amber-700 bg-amber-50 rounded px-2 py-1 mt-2 border border-amber-200">
+                  ⚠ Previously revealed {new Date(credentials.previous_reveal.at).toLocaleString()}
+                  {credentials.previous_reveal.actor && ` to ${credentials.previous_reveal.actor}`}.
+                  If that wasn&apos;t you, ask the operator to rotate this secret.
+                </p>
+              )}
             </div>
           )}
 
