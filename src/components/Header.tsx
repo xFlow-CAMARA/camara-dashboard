@@ -21,7 +21,6 @@ export default function Header() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Fetch active core from backend
     const fetchActiveCore = async () => {
       try {
         const response = await fetch('/api/cores/active');
@@ -36,63 +35,45 @@ export default function Header() {
       } catch (error) {
         console.error('Failed to fetch active core:', error);
       }
-      
-      // Fallback to localStorage
       const saved = localStorage.getItem('selectedCore');
       if (saved && adapters.includes(saved)) {
         setSelectedAdapter(saved);
       }
     };
-    
     fetchActiveCore();
-  }, []);
+  }, [adapters]);
 
   useEffect(() => {
     const checkHealth = async () => {
       try {
         const data = await apiClient.getHealth(selectedAdapter);
         setHealth(data);
-      } catch (error) {
+      } catch {
         setHealth({ connected: false });
       } finally {
         setChecking(false);
       }
     };
-
     checkHealth();
-    const interval = setInterval(checkHealth, 5000); // Check every 5 seconds
-
+    const interval = setInterval(checkHealth, 5000);
     return () => clearInterval(interval);
   }, [selectedAdapter]);
 
   const handleCoreChange = async (core: string) => {
     if (core === selectedAdapter) return;
-    
     setChecking(true);
     try {
-      // Call backend API to switch active core
       const response = await fetch('/api/cores/active', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coreName: core })
+        body: JSON.stringify({ coreName: core }),
       });
-      
       if (response.ok) {
         setSelectedAdapter(core);
         localStorage.setItem('selectedCore', core);
-        
-        // Show success message
         const data = await response.json();
         alert(`✓ Switched to ${core}\n\n${data.message}\n\nRestarting NEF services...`);
-        
-        // Restart NEF services via API
-        try {
-          await fetch('/api/nef/restart', { method: 'POST' });
-        } catch (err) {
-          console.error('Failed to restart NEF services:', err);
-        }
-        
-        // Reload to apply changes
+        try { await fetch('/api/nef/restart', { method: 'POST' }); } catch {}
         window.location.reload();
       } else {
         const error = await response.json().catch(() => ({ detail: 'Connection failed' }));
@@ -105,48 +86,46 @@ export default function Header() {
     }
   };
 
+  const dotColor = checking ? 'var(--ink-3)' : health.connected ? 'var(--moss)' : 'var(--rust)';
+  const dotBg    = checking ? 'var(--bg-sunken)' : health.connected ? 'var(--moss-bg)' : 'var(--rust-bg)';
+  const label    = checking ? 'Checking' : health.connected ? 'Connected' : 'Disconnected';
+
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">CAMARA API Dashboard</h1>
-            <p className="text-sm text-gray-600 mt-1">Test and monitor CAMARA APIs with multiple 5G core backends</p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">5G Core:</label>
-            <select
-              value={selectedAdapter}
-              onChange={(e) => handleCoreChange(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
-            >
-              {adapters.map((adapter) => (
-                <option key={adapter} value={adapter}>
-                  {adapter.charAt(0).toUpperCase() + adapter.slice(1)}
-                </option>
-              ))}
-            </select>
-            
-            {checking ? (
-              <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                Checking...
-              </div>
-            ) : health.connected ? (
-              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                Connected
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                Disconnected
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="flex items-center justify-between gap-6 min-w-0">
+      <div className="min-w-0">
+        <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3">CAMARA · Operator</p>
       </div>
-    </header>
+
+      <div className="flex items-center gap-3 shrink-0">
+        <label className="text-[11px] uppercase tracking-[0.18em] text-ink-3">Core</label>
+        <select
+          value={selectedAdapter}
+          onChange={(e) => handleCoreChange(e.target.value)}
+          className="px-3 py-1.5 text-[12px] font-mono border rounded-sm focus:outline-none focus:ring-2"
+          style={{
+            background: 'var(--bg-elev)',
+            borderColor: 'var(--hairline-2)',
+            color: 'var(--ink)',
+          }}
+        >
+          {adapters.map((adapter) => (
+            <option key={adapter} value={adapter}>
+              {adapter.charAt(0).toUpperCase() + adapter.slice(1)}
+            </option>
+          ))}
+        </select>
+
+        <span
+          className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm text-[11px] uppercase tracking-[0.16em] font-mono"
+          style={{ background: dotBg, color: dotColor }}
+        >
+          <span
+            className={`block w-1.5 h-1.5 rounded-full ${checking || health.connected ? 'animate-pulse' : ''}`}
+            style={{ background: dotColor }}
+          />
+          {label}
+        </span>
+      </div>
+    </div>
   );
 }

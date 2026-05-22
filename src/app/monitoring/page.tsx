@@ -8,8 +8,16 @@ export default function MonitoringPage() {
     <Layout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Monitoring Dashboard</h1>
-          <p className="text-gray-600 mt-1">Real-time metrics and analytics for your 5G core network</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3 mb-2">Telemetry</p>
+          <h1 className="font-display text-[40px] leading-[1.05] tracking-[-0.025em]">
+            Monitoring{' '}
+            <span className="italic" style={{ fontVariationSettings: "'opsz' 144, 'SOFT' 80, 'WONK' 1" }}>
+              dashboard
+            </span>
+          </h1>
+          <p className="text-[13px] text-ink-3 mt-2 max-w-md">
+            Real-time metrics and analytics for the 5G core network.
+          </p>
         </div>
 
         <MonitoringPanel />

@@ -1,81 +1,107 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
+const GRAFANA_PORT = process.env.NEXT_PUBLIC_GRAFANA_PORT || '3000';
+const DASHBOARD_PATH = '/d/5g-core-sim/5g-core-simulator-dashboard';
+
 export default function MonitoringPanel() {
-  const grafanaUrl = 'http://192.168.20.171:3000';
-  const dashboardUrl = 'http://192.168.20.171:3000/d/5g-core-sim/5g-core-simulator-dashboard';
-  const embedUrl = 'http://192.168.20.171:3000/d/5g-core-sim/5g-core-simulator-dashboard?orgId=1&refresh=5s&kiosk';
+  /* Resolve Grafana host from the current location so the iframe works
+   * over any of localhost / LAN IP / SSH-tunneled host. Avoids hardcoding
+   * a specific machine IP that breaks for everyone else. */
+  const [origin, setOrigin] = useState('');
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(`http://${window.location.hostname}:${GRAFANA_PORT}`);
+    }
+  }, []);
+
+  const dashboardUrl = origin ? `${origin}${DASHBOARD_PATH}` : '';
+  const embedUrl     = origin ? `${origin}${DASHBOARD_PATH}?orgId=1&refresh=5s&kiosk` : '';
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">System Monitoring</h2>
-
-      {/* Monitoring info */}
-      <div className="bg-gray-50 rounded-md p-4 mb-4">
-        <h3 className="font-semibold text-gray-800 mb-2">5G Core Simulator</h3>
-        <p className="text-sm text-gray-600 mb-3">Real-time 5G Core Network Metrics</p>
-        
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Grafana Dashboard:</span>
+    <div className="space-y-6">
+      <section className="surface-lg overflow-hidden">
+        <div className="px-6 py-5 flex items-center justify-between border-b border-hairline">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Observability</p>
+            <h2 className="font-display text-[22px] tracking-[-0.015em] mt-1">
+              5G Core Simulator
+            </h2>
+            <p className="text-[13px] text-ink-3 mt-1">Real-time core network metrics, streamed via Grafana</p>
+          </div>
+          {origin && (
             <a
               href={dashboardUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 underline"
+              className="btn-ghost"
             >
-              Open Dashboard →
+              Open Grafana →
             </a>
-          </div>
+          )}
         </div>
-      </div>
 
-      {/* Embedded Grafana iframe */}
-      <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
-        <div className="bg-gray-100 px-4 py-2 border-b border-gray-300">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">
-              Live Dashboard Preview - 5G Core Simulator
+        <div className="border-t border-hairline">
+          <div
+            className="flex items-center justify-between px-4 py-2.5 bg-bg-sunken border-b border-hairline"
+          >
+            <span className="text-[11px] uppercase tracking-[0.18em] text-ink-3">
+              Live preview
             </span>
-            <a
-              href={dashboardUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-blue-600 hover:text-blue-800"
-            >
-              Open in new tab ↗
-            </a>
+            {origin && (
+              <a
+                href={dashboardUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] uppercase tracking-[0.18em] text-sage-700 hover:text-sage-900"
+              >
+                Open in new tab ↗
+              </a>
+            )}
+          </div>
+          <div className="relative" style={{ height: '600px', background: 'var(--bg-sunken)' }}>
+            {origin ? (
+              <iframe
+                src={embedUrl}
+                className="w-full h-full"
+                frameBorder="0"
+                title="5G Core Simulator Grafana Dashboard"
+                allow="fullscreen"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-[12px] text-ink-3">
+                Loading…
+              </div>
+            )}
           </div>
         </div>
-        <div className="relative bg-gray-50" style={{ height: '600px' }}>
-          <iframe
-            src={embedUrl}
-            className="w-full h-full"
-            frameBorder="0"
-            title="5G Core Simulator Grafana Dashboard"
-            allow="fullscreen"
-          />
+      </section>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="surface px-4 py-3">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Status</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <span className="block w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--moss)' }} />
+            <span className="text-[14px] text-ink">Online</span>
+          </div>
+        </div>
+        <div className="surface px-4 py-3">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Metrics</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <span className="block w-2 h-2 rounded-full" style={{ background: 'var(--sage-500)' }} />
+            <span className="text-[14px] text-ink">Real-time</span>
+          </div>
         </div>
       </div>
 
-      {/* Quick stats */}
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        <div className="bg-blue-50 rounded-md p-3">
-          <div className="text-xs font-medium text-blue-700 mb-1">Status</div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-semibold text-gray-900">Online</span>
-          </div>
-        </div>
-        <div className="bg-purple-50 rounded-md p-3">
-          <div className="text-xs font-medium text-purple-700 mb-1">Metrics</div>
-          <span className="text-sm font-semibold text-gray-900">Real-time</span>
-        </div>
-      </div>
-
-      {/* Info notice */}
-      <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-md p-3">
-        <p className="text-xs text-yellow-800">
-          <strong>Note:</strong> Default Grafana credentials are admin/admin. 
+      <div
+        className="px-4 py-3 rounded-sm text-[12px] flex items-start gap-2"
+        style={{ background: 'var(--amber-bg)', color: 'var(--amber)' }}
+      >
+        <span className="font-mono mt-px">!</span>
+        <p>
+          Default Grafana credentials are <span className="font-mono">admin / admin</span>.
           You may need to log in on first access.
         </p>
       </div>
