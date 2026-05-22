@@ -45,7 +45,8 @@ function AdminInvokersPageInner() {
   const [revokeReason, setRevokeReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionResult, setActionResult] = useState<{ ok: boolean; msg: string } | null>(null);
-  const [modal, setModal] = useState<'approve' | 'reject' | 'revoke' | null>(null);
+  const [rotateReason, setRotateReason] = useState('');
+  const [modal, setModal] = useState<'approve' | 'reject' | 'revoke' | 'rotate' | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,6 +71,7 @@ function AdminInvokersPageInner() {
   };
   const openReject = (inv: Invoker) => { setSelected(inv); setRejectReason(''); setActionResult(null); setModal('reject'); };
   const openRevoke = (inv: Invoker) => { setSelected(inv); setRevokeReason(''); setActionResult(null); setModal('revoke'); };
+  const openRotate = (inv: Invoker) => { setSelected(inv); setRotateReason(''); setActionResult(null); setModal('rotate'); };
 
   const doApprove = async () => {
     if (!selected) return;
@@ -137,6 +139,29 @@ function AdminInvokersPageInner() {
       const data = await r.json();
       if (!r.ok) throw new Error(data.detail || data.error || r.statusText);
       setActionResult({ ok: true, msg: 'Invoker suspended. Keycloak client deleted.' });
+      load();
+    } catch (e: unknown) {
+      setActionResult({ ok: false, msg: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const doRotate = async () => {
+    if (!selected) return;
+    setActionLoading(true);
+    try {
+      const r = await fetch(`/api/admin/invokers/${selected.invoker_id}/rotate-secret`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: rotateReason || null, rotated_by: approvedBy }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || data.error || r.statusText);
+      setActionResult({
+        ok: true,
+        msg: `Secret rotated. New value (copy now — won't be shown again here):\n${data.keycloak_secret}`,
+      });
       load();
     } catch (e: unknown) {
       setActionResult({ ok: false, msg: e instanceof Error ? e.message : String(e) });
@@ -227,7 +252,10 @@ function AdminInvokersPageInner() {
                           </>
                         )}
                         {inv.approval_status === 'approved' && (
-                          <button onClick={() => openRevoke(inv)} className="text-xs bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700">Revoke</button>
+                          <>
+                            <button onClick={() => openRotate(inv)} className="text-xs bg-amber-600 text-white px-2 py-1 rounded hover:bg-amber-700">Rotate Secret</button>
+                            <button onClick={() => openRevoke(inv)} className="text-xs bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700">Revoke</button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -244,7 +272,10 @@ function AdminInvokersPageInner() {
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-1">
-              {modal === 'approve' ? 'Approve Invoker' : modal === 'reject' ? 'Reject Invoker' : 'Revoke Access'}
+              {modal === 'approve' ? 'Approve Invoker' :
+               modal === 'reject'  ? 'Reject Invoker'  :
+               modal === 'revoke'  ? 'Revoke Access'   :
+                                     'Rotate Client Secret'}
             </h2>
             <p className="text-sm text-gray-500 mb-4">{selected.invoker_name} — {selected.contact_email}</p>
 
@@ -283,6 +314,18 @@ function AdminInvokersPageInner() {
               </div>
             )}
 
+            {modal === 'rotate' && (
+              <div className="space-y-3">
+                <p className="text-sm text-amber-700">
+                  The current Keycloak client secret will be invalidated immediately and a new one issued.
+                  Existing access tokens minted with the old secret keep working until their expiry, but
+                  no new tokens can be issued with the old secret.
+                </p>
+                <label className="block text-sm font-medium text-gray-700">Reason (optional)</label>
+                <textarea value={rotateReason} onChange={e => setRotateReason(e.target.value)} rows={2} className="w-full border rounded px-3 py-2 text-sm" placeholder="e.g. developer lost the secret" />
+              </div>
+            )}
+
             {actionResult && (
               <div className={`mt-3 p-3 rounded text-sm ${actionResult.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'}`}>
                 {actionResult.msg}
@@ -295,15 +338,31 @@ function AdminInvokersPageInner() {
               </button>
               {!actionResult?.ok && (
                 <button
-                  onClick={modal === 'approve' ? doApprove : modal === 'reject' ? doReject : doRevoke}
-                  disabled={actionLoading || (modal === 'approve' && approveScopes.length === 0) || (modal === 'reject' && !rejectReason) || (modal === 'revoke' && !revokeReason)}
+                  onClick={
+                    modal === 'approve' ? doApprove :
+                    modal === 'reject'  ? doReject  :
+                    modal === 'revoke'  ? doRevoke  :
+                                          doRotate
+                  }
+                  disabled={
+                    actionLoading ||
+                    (modal === 'approve' && approveScopes.length === 0) ||
+                    (modal === 'reject' && !rejectReason) ||
+                    (modal === 'revoke' && !revokeReason)
+                  }
                   className={`px-4 py-2 text-sm text-white rounded font-medium disabled:opacity-50 ${
                     modal === 'approve' ? 'bg-green-600 hover:bg-green-700' :
                     modal === 'reject'  ? 'bg-red-600 hover:bg-red-700' :
-                                         'bg-gray-700 hover:bg-gray-800'
+                    modal === 'revoke'  ? 'bg-gray-700 hover:bg-gray-800' :
+                                          'bg-amber-600 hover:bg-amber-700'
                   }`}
                 >
-                  {actionLoading ? 'Processing…' : modal === 'approve' ? 'Approve & Create Client' : modal === 'reject' ? 'Reject' : 'Revoke'}
+                  {actionLoading
+                    ? 'Processing…'
+                    : modal === 'approve' ? 'Approve & Create Client'
+                    : modal === 'reject'  ? 'Reject'
+                    : modal === 'revoke'  ? 'Revoke'
+                    :                       'Rotate Secret'}
                 </button>
               )}
             </div>
