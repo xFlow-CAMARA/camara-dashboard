@@ -49,6 +49,8 @@ const SAMPLE_PATHS: Record<string, { method: string; path: string; body?: object
 };
 
 function InvokerCard({ inv }: { inv: InvokerStatus }) {
+  const { data: session } = useSession();
+  const myEmail = session?.user?.email ?? '';
   const cfg = STATUS_CONFIG[inv.approval_status] ?? STATUS_CONFIG['pending'];
   const isApproved = inv.approval_status === 'approved';
 
@@ -183,13 +185,21 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
                   className="text-xs text-blue-600 hover:underline"
                 >Copy</button>
               </div>
-              {credentials.previous_reveal && (
-                <p className="text-[11px] text-amber-700 bg-amber-50 rounded px-2 py-1 mt-2 border border-amber-200">
-                  ⚠ Previously revealed {new Date(credentials.previous_reveal.at).toLocaleString()}
-                  {credentials.previous_reveal.actor && ` to ${credentials.previous_reveal.actor}`}.
-                  If that wasn&apos;t you, ask the operator to rotate this secret.
-                </p>
-              )}
+              {credentials.previous_reveal && (() => {
+                const when = new Date(credentials.previous_reveal.at).toLocaleString();
+                const who  = credentials.previous_reveal.actor;
+                const isMe = who && myEmail && who === myEmail;
+                return isMe ? (
+                  <p className="text-[11px] text-slate-500 bg-slate-50 rounded px-2 py-1 mt-2 border border-slate-200">
+                    You last viewed this secret on {when}.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-amber-700 bg-amber-50 rounded px-2 py-1 mt-2 border border-amber-200">
+                    ⚠ Previously revealed to <span className="font-mono">{who}</span> on {when}.
+                    If that wasn&apos;t expected, ask the operator to rotate this secret.
+                  </p>
+                );
+              })()}
             </div>
           )}
 

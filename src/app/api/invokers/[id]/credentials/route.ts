@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
+import { takeMultiWindow } from '@/lib/rate-limit';
 
 const ONBOARDING_URL = process.env.INVOKER_ONBOARDING_URL || 'http://invoker-onboarding:8080';
 const DEV_API_KEY    = process.env.INVOKER_DEV_API_KEY    || '';
@@ -16,6 +17,22 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Each reveal also writes an audit row (server-side). Don't let a logged-in
+  // attacker DOS the audit log or fish for previous_reveal metadata.
+  //   - 5 burst, refill 0.5/sec
+  //   - 30/hour sustained — secrets shouldn't be fetched that often legitimately
+  const rl = takeMultiWindow(
+    `creds:${session.user.email}`,
+    { capacity: 5,  refillRate: 0.5 },
+    { capacity: 30, refillRate: 30 / 3600 },
+  );
+  if (!rl.allowed) {
+    return new NextResponse(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) },
+    });
   }
 
   try {

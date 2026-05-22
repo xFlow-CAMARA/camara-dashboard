@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Layout from '@/components/Layout';
 import AuthGuard from '@/components/AuthGuard';
 
@@ -33,9 +34,26 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 function AdminInvokersPageInner() {
-  const [filter, setFilter] = useState('pending');
+  // Pagination + filter state live in the URL so refresh / shared link
+  // / browser-back all preserve the admin's place in the queue.
+  const router  = useRouter();
+  const sParams = useSearchParams();
+  const filter  = sParams.get('status') ?? 'pending';
+  const page    = Math.max(0, parseInt(sParams.get('page') ?? '0', 10));
   const PAGE_SIZE = 25;
-  const [page, setPage] = useState(0);
+
+  const setFilter = (newStatus: string) => {
+    const qs = new URLSearchParams(sParams.toString());
+    if (newStatus) qs.set('status', newStatus); else qs.delete('status');
+    qs.delete('page');           // reset to first page on filter change
+    router.replace(`?${qs.toString()}`, { scroll: false });
+  };
+  const setPage = (next: number) => {
+    const qs = new URLSearchParams(sParams.toString());
+    qs.set('page', String(Math.max(0, next)));
+    router.replace(`?${qs.toString()}`, { scroll: false });
+  };
+
   const [invokers, setInvokers] = useState<Invoker[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -54,17 +72,19 @@ function AdminInvokersPageInner() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch one extra row so we know whether a next page exists without
-      // a separate count query.
-      const skip  = page * PAGE_SIZE;
-      const limit = PAGE_SIZE + 1;
-      const qs    = new URLSearchParams({ limit: String(limit), skip: String(skip) });
+      const skip = page * PAGE_SIZE;
+      const qs   = new URLSearchParams({ limit: String(PAGE_SIZE), skip: String(skip) });
       if (filter) qs.set('status', filter);
       const r = await fetch(`/api/admin/invokers?${qs.toString()}`);
       const data = await r.json();
-      const rows = Array.isArray(data) ? data : [];
-      setHasMore(rows.length > PAGE_SIZE);
-      setInvokers(rows.slice(0, PAGE_SIZE));
+      // Backend returns { items, has_more, skip, limit }. Fall back to the
+      // legacy array shape for backward compatibility during deploy.
+      if (Array.isArray(data)) {
+        setInvokers(data); setHasMore(false);
+      } else {
+        setInvokers(Array.isArray(data.items) ? data.items : []);
+        setHasMore(!!data.has_more);
+      }
     } catch {
       setInvokers([]); setHasMore(false);
     } finally {
@@ -73,9 +93,6 @@ function AdminInvokersPageInner() {
   }, [filter, page]);
 
   useEffect(() => { load(); }, [load]);
-
-  // Filter change resets to page 0
-  useEffect(() => { setPage(0); }, [filter]);
 
   const openApprove = (inv: Invoker) => {
     setSelected(inv);
@@ -289,12 +306,12 @@ function AdminInvokersPageInner() {
             </span>
             <div className="flex gap-2">
               <button
-                onClick={() => setPage(p => Math.max(0, p - 1))}
+                onClick={() => setPage(page - 1)}
                 disabled={page === 0}
                 className="px-3 py-1 rounded border bg-white disabled:opacity-40"
               >← Prev</button>
               <button
-                onClick={() => setPage(p => p + 1)}
+                onClick={() => setPage(page + 1)}
                 disabled={!hasMore}
                 className="px-3 py-1 rounded border bg-white disabled:opacity-40"
               >Next →</button>

@@ -1,9 +1,18 @@
 /**
  * Tiny in-memory token-bucket rate limiter.
  *
- * Scoped per dashboard process (no Redis/external store). Sufficient as a
- * brute-force speed-bump on session-keyed endpoints; serious abuse should
- * be caught upstream (Kong, WAF, Keycloak's own brute-force detection).
+ * IMPORTANT — scope: this lives in the Next.js process memory. Each Next.js
+ * worker keeps its own buckets, which means:
+ *
+ *   • A multi-instance deployment (load-balanced dashboards) sees up to
+ *     `instances × capacity` burst per key, not `capacity`. For real
+ *     brute-force protection at scale, migrate to a Redis INCR+TTL backend
+ *     (kept TODO at the bottom).
+ *   • Restarts reset every bucket. Fine for speed-bump use; not for hard
+ *     quotas.
+ *
+ * Use it as a defence-in-depth speed-bump only. Real abuse should be caught
+ * upstream (Kong, WAF, Keycloak's own brute-force detection on the IDP).
  */
 
 interface Bucket {
@@ -42,11 +51,34 @@ export function take(key: string, opts: RateLimitOpts): { allowed: boolean; retr
   return { allowed: false, retryAfterMs };
 }
 
-// Periodically evict idle buckets so memory doesn't grow unbounded
+/** Two-window guard: a short burst limit AND a longer sustained-rate limit.
+ *  Both must allow the request. Defeats "slow-and-steady" attackers who
+ *  pace themselves to the bucket refill rate forever. */
+export function takeMultiWindow(
+  key: string,
+  burst:    RateLimitOpts,
+  sustained: RateLimitOpts,
+): { allowed: boolean; retryAfterMs: number } {
+  const b = take(`${key}:burst`, burst);
+  if (!b.allowed) return b;
+  const s = take(`${key}:sustained`, sustained);
+  if (!s.allowed) return s;
+  return { allowed: true, retryAfterMs: 0 };
+}
+
+// Periodically evict idle buckets so memory doesn't grow unbounded.
+// Guard against Next.js HMR creating multiple intervals on file save in dev.
+declare global {
+  var __rlEvictTimer: ReturnType<typeof setInterval> | undefined;
+}
+
 const EVICT_AFTER_MS = 10 * 60 * 1000;
-setInterval(() => {
-  const cutoff = Date.now() - EVICT_AFTER_MS;
-  _buckets.forEach((b, k) => {
-    if (b.updated < cutoff) _buckets.delete(k);
-  });
-}, 60 * 1000).unref?.();
+if (!globalThis.__rlEvictTimer) {
+  globalThis.__rlEvictTimer = setInterval(() => {
+    const cutoff = Date.now() - EVICT_AFTER_MS;
+    _buckets.forEach((b, k) => {
+      if (b.updated < cutoff) _buckets.delete(k);
+    });
+  }, 60 * 1000);
+  globalThis.__rlEvictTimer.unref?.();
+}

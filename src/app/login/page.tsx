@@ -4,6 +4,36 @@ import { signIn, useSession } from 'next-auth/react';
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+/**
+ * Renders the "New here? Sign up" link only when we know where Keycloak lives
+ * for the browser. In dev we fall back to localhost. In any other build the
+ * link is omitted (rather than silently pointing at the wrong URL) — the
+ * operator must set NEXT_PUBLIC_KEYCLOAK_PUBLIC_URL explicitly.
+ */
+function SignupLink() {
+  const configured = process.env.NEXT_PUBLIC_KEYCLOAK_PUBLIC_URL;
+  const isDev      = process.env.NODE_ENV !== 'production';
+  const base       = configured || (isDev ? 'http://localhost:8180' : null);
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+
+  if (!base) return null;     // production without explicit config — no link
+
+  const redirect = encodeURIComponent(`${origin || 'http://localhost:3100'}/login`);
+  const href = `${base}/realms/camara/protocol/openid-connect/registrations`
+             + `?client_id=camara-dashboard-app&response_type=code&redirect_uri=${redirect}`;
+
+  return (
+    <div className="mt-4 text-center">
+      <a href={href} className="text-sm text-blue-600 hover:underline">New here? Sign up</a>
+      <p className="text-[11px] text-slate-400 mt-1">
+        Self-service signs you up as a developer. Admins are provisioned by the operator.
+      </p>
+    </div>
+  );
+}
+
 function LoginForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -87,17 +117,8 @@ function LoginForm() {
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <a
-            href={`${process.env.NEXT_PUBLIC_KEYCLOAK_PUBLIC_URL || 'http://localhost:8180'}/realms/camara/protocol/openid-connect/registrations?client_id=camara-dashboard-app&response_type=code&redirect_uri=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin + '/login' : 'http://localhost:3100/login')}`}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            New here? Sign up
-          </a>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Self-service signs you up as a developer. Admins are provisioned by the operator.
-          </p>
-        </div>
+        <SignupLink />
+
 
         <button
           onClick={() => setShowHint(s => !s)}

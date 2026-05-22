@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
-import { take } from '@/lib/rate-limit';
+import { takeMultiWindow } from '@/lib/rate-limit';
 
 const KEYCLOAK_URL    = process.env.KEYCLOAK_INTERNAL_URL  || 'http://keycloak:8080';
 const REALM           = process.env.KEYCLOAK_REALM         || 'camara';
@@ -29,10 +29,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Speed-bump against credential brute-force: 10 tokens, refill 1/sec.
-  // Generous for normal "request a token while developing" use, prohibitive
-  // for guessing secrets in a loop.
-  const rl = take(`token:${session.user.email}`, { capacity: 10, refillRate: 1 });
+  // Speed-bump against credential brute-force.
+  //   - 10 burst, refill 1/sec → fine for interactive development
+  //   - 200/hour sustained     → caps a slow-and-steady attacker
+  const rl = takeMultiWindow(
+    `token:${session.user.email}`,
+    { capacity: 10,  refillRate: 1 },
+    { capacity: 200, refillRate: 200 / 3600 },
+  );
   if (!rl.allowed) {
     return new NextResponse(JSON.stringify({ error: 'Too many requests' }), {
       status: 429,
