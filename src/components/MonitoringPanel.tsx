@@ -2,22 +2,17 @@
 
 import { useEffect, useState } from 'react';
 
-const GRAFANA_PORT = process.env.NEXT_PUBLIC_GRAFANA_PORT || '3000';
-const DASHBOARD_PATH = '/d/5g-core-sim/5g-core-simulator-dashboard';
+const DASHBOARD_PATH = '/grafana/d/5g-core-sim/5g-core-simulator-dashboard';
 
 export default function MonitoringPanel() {
-  /* Resolve Grafana host from the current location so the iframe works
-   * over any of localhost / LAN IP / SSH-tunneled host. Avoids hardcoding
-   * a specific machine IP that breaks for everyone else. */
-  const [origin, setOrigin] = useState('');
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(`http://${window.location.hostname}:${GRAFANA_PORT}`);
-    }
-  }, []);
+  /* Grafana is proxied through the dashboard origin (Next.js rewrites
+   * /grafana/* → grafana:3000/grafana/*) so the iframe works over the
+   * single port the user reaches the dashboard at. No extra SSH tunnel. */
+  const [ready, setReady] = useState(false);
+  useEffect(() => { setReady(true); }, []);
 
-  const dashboardUrl = origin ? `${origin}${DASHBOARD_PATH}` : '';
-  const embedUrl     = origin ? `${origin}${DASHBOARD_PATH}?orgId=1&refresh=5s&kiosk` : '';
+  const dashboardUrl = DASHBOARD_PATH;
+  const embedUrl     = `${DASHBOARD_PATH}?orgId=1&refresh=5s&kiosk`;
 
   return (
     <div className="space-y-6">
@@ -30,16 +25,14 @@ export default function MonitoringPanel() {
             </h2>
             <p className="text-[13px] text-ink-3 mt-1">Real-time core network metrics, streamed via Grafana</p>
           </div>
-          {origin && (
-            <a
-              href={dashboardUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-ghost"
-            >
-              Open Grafana →
-            </a>
-          )}
+          <a
+            href={dashboardUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ghost"
+          >
+            Open Grafana →
+          </a>
         </div>
 
         <div className="border-t border-hairline">
@@ -49,19 +42,17 @@ export default function MonitoringPanel() {
             <span className="text-[11px] uppercase tracking-[0.18em] text-ink-3">
               Live preview
             </span>
-            {origin && (
-              <a
-                href={dashboardUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] uppercase tracking-[0.18em] text-sage-700 hover:text-sage-900"
-              >
-                Open in new tab ↗
-              </a>
-            )}
+            <a
+              href={dashboardUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] uppercase tracking-[0.18em] text-sage-700 hover:text-sage-900"
+            >
+              Open in new tab ↗
+            </a>
           </div>
           <div className="relative" style={{ height: '600px', background: 'var(--bg-sunken)' }}>
-            {origin ? (
+            {ready ? (
               <iframe
                 src={embedUrl}
                 className="w-full h-full"
