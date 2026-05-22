@@ -10,160 +10,135 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+/* Small inline SVG icons — distinctive, hand-drawn feel; not generic Heroicons.
+ * 1.4 stroke, rounded caps. Slight wobble baked in. */
+function Icon({ d, className }: { d: string; className?: string }) {
+  return (
+    <svg className={className ?? 'w-[18px] h-[18px]'} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
+
+const PATH = {
+  home:        'M4 11l8-7 8 7M6 10v9a1 1 0 001 1h3v-6h4v6h3a1 1 0 001-1v-9',
+  apis:        'M4 6h16M4 12h16M4 18h10',
+  registry:    'M3 7l9-4 9 4-9 4-9-4z M3 12l9 4 9-4 M3 17l9 4 9-4',
+  monitor:     'M4 19V5m4 14V9m4 10V12m4 7V7m4 12v-4',
+  registerApp: 'M12 5v14m-7-7h14',
+  myApps:      'M4 6h16v4H4zM4 14h16v4H4z',
+  playground: 'M5 4l8 8-8 8M14 4l8 8-8 8',
+  queue:       'M3 6h18M3 12h18M3 18h12',
+  audit:       'M9 5l6 0M9 12l6 0M9 19l6 0M5 5l0 0M5 12l0 0M5 19l0 0',
+};
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const roles = session?.user?.roles ?? [];
   const isAdmin = roles.includes('admin');
-  const [developerExpanded, setDeveloperExpanded] = useState(true);
-  const [adminExpanded, setAdminExpanded] = useState(true);
 
-  const isActive = (path: string) => pathname === path;
+  const [developerOpen, setDeveloperOpen] = useState(true);
+  const [adminOpen, setAdminOpen]         = useState(true);
+
+  const isActive = (p: string) => pathname === p;
+
+  const navItem = (href: string, label: string, iconPath: string) => (
+    <Link
+      href={href}
+      onClick={onClose}
+      className={`group flex items-center gap-3 px-3 py-2 rounded-sm text-[13.5px] transition-colors
+        ${isActive(href)
+          ? 'bg-sage-50 text-sage-900 font-medium'
+          : 'text-ink-2 hover:bg-bg-sunken hover:text-ink'
+        }`}
+    >
+      <Icon d={iconPath} className="w-[17px] h-[17px] opacity-80" />
+      <span>{label}</span>
+      {isActive(href) && <span className="ml-auto w-1 h-1 rounded-full bg-sage-500" />}
+    </Link>
+  );
 
   return (
     <>
-      {/* Mobile backdrop */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        <div
+          className="fixed inset-0 bg-ink/30 z-40 lg:hidden backdrop-blur-sm"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 transition-transform duration-300
+        fixed top-0 left-0 h-full z-50 w-72 transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        w-64
+        bg-bg-sunken border-r border-hairline
       `}>
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-800">CAMARA Dashboard</h1>
-            <p className="text-xs text-gray-500 mt-1">5G Network APIs</p>
-          </div>
+          {/* Brand mark — distinctive serif lockup, not a logo */}
+          <Link href="/" className="block px-6 pt-8 pb-6 border-b border-hairline">
+            <h1 className="font-display text-[28px] leading-none tracking-[-0.02em] text-ink">
+              CAMARA
+              <span className="text-sage-500">.</span>
+            </h1>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3 mt-2">
+              {isAdmin ? 'Operator console' : 'Developer portal'}
+            </p>
+          </Link>
 
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
-              {isAdmin && (<>
-              {/* 5G Cores Section - Home */}
-              <Link
-                href="/cores"
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded ${
-                  isActive('/cores') || isActive('/')
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                Home (5G Cores)
-              </Link>
+          <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+            {isAdmin && (
+              <div className="space-y-1">
+                {navItem('/cores',      '5G Cores',         PATH.home)}
+                {navItem('/capif',      'Service Registry', PATH.registry)}
+                {navItem('/monitoring', 'Monitoring',       PATH.monitor)}
+              </div>
+            )}
 
-              {/* Service Registry */}
-              <Link
-                href="/capif"
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded ${
-                  isActive('/capif')
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                </svg>
-                Service Registry
-              </Link>
-
-              {/* Monitoring Section */}
-              <Link
-                href="/monitoring"
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded ${
-                  isActive('/monitoring')
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Monitoring
-              </Link>
-              </>)}
-
-              {/* Developer Portal Section — developer role only */}
-              {!isAdmin && (
+            {/* Developer portal — visible only to non-admins */}
+            {!isAdmin && (
               <div>
                 <button
-                  onClick={() => setDeveloperExpanded(!developerExpanded)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded"
+                  onClick={() => setDeveloperOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] uppercase tracking-[0.22em] text-ink-3 hover:text-ink"
                 >
-                  <span className="flex items-center">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    Developer Portal
-                  </span>
-                  <svg className={`w-4 h-4 transition-transform ${developerExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <span>Developer Portal</span>
+                  <span className={`text-ink-3 transition-transform ${developerOpen ? '' : '-rotate-90'}`}>▾</span>
                 </button>
-                {developerExpanded && (
-                  <div className="ml-8 mt-1 space-y-1">
-                    <Link href="/developer/register" className={`block px-3 py-2 text-sm rounded ${isActive('/developer/register') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                      Register App
-                    </Link>
-                    <Link href="/developer/status" className={`block px-3 py-2 text-sm rounded ${isActive('/developer/status') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                      My Registrations
-                    </Link>
-                    <Link href="/developer/playground" className={`block px-3 py-2 text-sm rounded ${isActive('/developer/playground') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                      API Playground
-                    </Link>
+                {developerOpen && (
+                  <div className="mt-1 space-y-0.5">
+                    {navItem('/developer/register',   'Register App',     PATH.registerApp)}
+                    {navItem('/developer/status',     'My Registrations', PATH.myApps)}
+                    {navItem('/developer/playground', 'API Playground',   PATH.playground)}
                   </div>
                 )}
               </div>
-              )}
+            )}
 
-              {/* Admin Section — admin role only */}
-              {isAdmin && (
+            {/* Admin */}
+            {isAdmin && (
               <div>
                 <button
-                  onClick={() => setAdminExpanded(!adminExpanded)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded"
+                  onClick={() => setAdminOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] uppercase tracking-[0.22em] text-ink-3 hover:text-ink"
                 >
-                  <span className="flex items-center">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    Admin
-                  </span>
-                  <svg className={`w-4 h-4 transition-transform ${adminExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <span>Operator</span>
+                  <span className={`text-ink-3 transition-transform ${adminOpen ? '' : '-rotate-90'}`}>▾</span>
                 </button>
-                {adminExpanded && (
-                  <div className="ml-8 mt-1 space-y-1">
-                    <Link href="/admin/invokers" className={`block px-3 py-2 text-sm rounded ${isActive('/admin/invokers') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                      Approval Queue
-                    </Link>
-                    <Link href="/admin/audit" className={`block px-3 py-2 text-sm rounded ${isActive('/admin/audit') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                      Audit Log
-                    </Link>
+                {adminOpen && (
+                  <div className="mt-1 space-y-0.5">
+                    {navItem('/admin/invokers', 'Approval Queue', PATH.queue)}
+                    {navItem('/admin/audit',    'Audit Log',      PATH.audit)}
                   </div>
                 )}
               </div>
-              )}
-            </div>
+            )}
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="text-xs text-gray-500">
-              <p className="font-medium text-gray-700 mb-1">CoreSim Simulator</p>
-              <p>Version 1.0.0</p>
-            </div>
+          {/* Footer mark — tiny grain texture detail */}
+          <div className="px-6 py-4 border-t border-hairline">
+            <p className="font-mono text-[10px] text-ink-3 tracking-tight">
+              v2.0 · 5G Network APIs
+            </p>
           </div>
         </div>
       </aside>

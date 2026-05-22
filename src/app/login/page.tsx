@@ -4,33 +4,20 @@ import { signIn, useSession } from 'next-auth/react';
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-/**
- * Renders the "New here? Sign up" link only when we know where Keycloak lives
- * for the browser. In dev we fall back to localhost. In any other build the
- * link is omitted (rather than silently pointing at the wrong URL) — the
- * operator must set NEXT_PUBLIC_KEYCLOAK_PUBLIC_URL explicitly.
- */
 function SignupLink() {
   const configured = process.env.NEXT_PUBLIC_KEYCLOAK_PUBLIC_URL;
   const isDev      = process.env.NODE_ENV !== 'production';
   const base       = configured || (isDev ? 'http://localhost:8180' : null);
   const [origin, setOrigin] = useState('');
-
   useEffect(() => { setOrigin(window.location.origin); }, []);
-
-  if (!base) return null;     // production without explicit config — no link
-
+  if (!base) return null;
   const redirect = encodeURIComponent(`${origin || 'http://localhost:3100'}/login`);
   const href = `${base}/realms/camara/protocol/openid-connect/registrations`
              + `?client_id=camara-dashboard-app&response_type=code&redirect_uri=${redirect}`;
-
   return (
-    <div className="mt-4 text-center">
-      <a href={href} className="text-sm text-blue-600 hover:underline">New here? Sign up</a>
-      <p className="text-[11px] text-slate-400 mt-1">
-        Self-service signs you up as a developer. Admins are provisioned by the operator.
-      </p>
-    </div>
+    <a href={href} className="text-sage-700 hover:text-sage-900 transition-colors underline decoration-sage-300 underline-offset-4">
+      Create one
+    </a>
   );
 }
 
@@ -57,85 +44,120 @@ function LoginForm() {
     e.preventDefault();
     setSubmitting(true);
     setError('');
-    const result = await signIn('credentials', {
-      username,
-      password,
-      callbackUrl,
-      redirect: false,
-    });
-    if (!result?.ok) {
-      setError(result?.error || 'Invalid username or password');
-    }
+    const result = await signIn('credentials', { username, password, callbackUrl, redirect: false });
+    if (!result?.ok) setError(result?.error || 'Invalid username or password');
     setSubmitting(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-8">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">CAMARA API Portal</h1>
-          <p className="text-sm text-gray-500 mt-2">Sign in to continue</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen flex">
+      {/* Left rail — editorial mark + atmosphere */}
+      <div className="hidden lg:flex w-[44%] xl:w-[40%] bg-bg-sunken border-r border-hairline relative overflow-hidden">
+        {/* subtle radial wash */}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse at 30% 20%, rgba(107,142,127,0.15), transparent 60%)',
+          }}
+        />
+        <div className="relative z-10 flex flex-col justify-between p-14 w-full">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              required
-              autoComplete="username"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="admin or dev"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded p-2 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting || !username || !password}
-            className="w-full bg-blue-600 text-white py-2.5 rounded-md font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
-            {submitting ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
-
-        <SignupLink />
-
-
-        <button
-          onClick={() => setShowHint(s => !s)}
-          className="w-full mt-4 text-xs text-gray-500 hover:underline"
-        >
-          {showHint ? 'Hide' : 'Show'} demo credentials
-        </button>
-
-        {showHint && (
-          <div className="mt-3 bg-gray-50 rounded p-4 text-xs text-gray-700 space-y-1 font-mono">
-            <p><span className="font-semibold text-gray-900">Admin:</span>   admin / admin123</p>
-            <p><span className="font-semibold text-gray-900">Developer:</span> dev / dev123</p>
-            <p className="mt-2 text-gray-500 font-sans">
-              All authentication is handled by Keycloak (camara realm).
+            <p className="text-[11px] uppercase tracking-[0.28em] text-ink-3 mb-12">CAMARA · 5G API</p>
+            <h1 className="font-display text-[64px] leading-[0.95] tracking-[-0.025em] text-ink">
+              Sign in to <br />
+              ship 5G<br />
+              <span className="italic" style={{ fontVariationSettings: "'opsz' 144, 'SOFT' 80, 'WONK' 1" }}>
+                APIs.
+              </span>
+            </h1>
+            <p className="mt-8 max-w-sm text-[15px] text-ink-2 leading-relaxed">
+              Register an application, request operator approval, and reach the
+              CAMARA network APIs that ride on top of the 5G core.
             </p>
           </div>
-        )}
+
+          {/* Tiny standalone visual: signal indicator + label, ties to the motif */}
+          <div className="flex items-end gap-3 text-ink-3">
+            <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '2px', height: '18px' }}>
+              {[4, 7, 10, 13, 16].map((h, i) => (
+                <span key={i} style={{
+                  width: '3px', height: `${h}px`,
+                  background: 'var(--sage-500)', opacity: 1 - i * 0.12, borderRadius: '1.5px',
+                }} />
+              ))}
+            </span>
+            <p className="text-[10px] uppercase tracking-[0.22em]">Connected to xFlow CAPIF</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right column — the form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-[380px]">
+          <div className="lg:hidden mb-10">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3">CAMARA · 5G API</p>
+            <h1 className="font-display text-[40px] leading-tight tracking-[-0.02em] mt-2">Sign in.</h1>
+          </div>
+          <h2 className="font-display text-[26px] tracking-[-0.015em] mb-1">Welcome back</h2>
+          <p className="text-[13px] text-ink-3 mb-8">
+            Don&apos;t have an account? <SignupLink />
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[11px] uppercase tracking-[0.18em] text-ink-3 mb-1.5">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                required
+                autoComplete="username"
+                placeholder="admin or dev"
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] uppercase tracking-[0.18em] text-ink-3 mb-1.5">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="input"
+              />
+            </div>
+
+            {error && (
+              <div className="px-3 py-2 rounded-sm bg-rust-bg border border-rust/30 text-[13px] text-rust">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting || !username || !password}
+              className="btn-primary w-full justify-center mt-2"
+            >
+              {submitting ? 'Signing in…' : 'Continue →'}
+            </button>
+          </form>
+
+          <button
+            onClick={() => setShowHint(s => !s)}
+            className="mt-6 text-[11px] uppercase tracking-[0.18em] text-ink-3 hover:text-ink"
+          >
+            {showHint ? '— Hide demo credentials' : '+ Show demo credentials'}
+          </button>
+
+          {showHint && (
+            <div className="mt-3 surface px-4 py-3 text-[12px] text-ink-2 space-y-1 font-mono">
+              <p><span className="text-ink-3">admin:</span> admin / admin123</p>
+              <p><span className="text-ink-3">dev:&nbsp;&nbsp;</span> dev / dev123</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -143,7 +165,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Loading…</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-ink-3">Loading…</div>}>
       <LoginForm />
     </Suspense>
   );

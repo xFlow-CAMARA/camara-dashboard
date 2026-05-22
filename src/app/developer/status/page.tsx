@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import AuthGuard from '@/components/AuthGuard';
+import SignalIndicator from '@/components/SignalIndicator';
 
 interface InvokerStatus {
   invoker_id: string;
@@ -18,25 +19,10 @@ interface InvokerStatus {
 }
 
 interface TokenResponse {
-  access_token?: string;
-  token_type?: string;
-  expires_in?: number;
-  error?: string;
-  error_description?: string;
+  access_token?: string; token_type?: string; expires_in?: number;
+  error?: string; error_description?: string;
 }
-
-interface TryResponse {
-  status?: number;
-  body?: unknown;
-  error?: string;
-}
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  pending:   { label: 'Pending Review', color: 'text-yellow-800', bg: 'bg-yellow-50 border-yellow-200' },
-  approved:  { label: 'Approved',       color: 'text-green-800',  bg: 'bg-green-50 border-green-200'  },
-  rejected:  { label: 'Rejected',       color: 'text-red-800',    bg: 'bg-red-50 border-red-200'      },
-  suspended: { label: 'Suspended',      color: 'text-gray-800',   bg: 'bg-gray-50 border-gray-200'    },
-};
+interface TryResponse { status?: number; body?: unknown; error?: string; }
 
 const SAMPLE_PATHS: Record<string, { method: string; path: string; body?: object }> = {
   'quality-on-demand':          { method: 'GET',  path: '/quality-on-demand/v1/sessions' },
@@ -48,17 +34,35 @@ const SAMPLE_PATHS: Record<string, { method: string; path: string; body?: object
   'sim-swap':                   { method: 'POST', path: '/sim-swap/vwip/check', body: { phoneNumber: '+33699901032' } },
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Pending review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  suspended: 'Suspended',
+  approving: 'Approving…',
+  rotating: 'Rotating…',
+};
+
+function pillClass(status: string) {
+  switch (status) {
+    case 'pending':   return 'pill pill-pending';
+    case 'approved':  return 'pill pill-approved';
+    case 'rejected':  return 'pill pill-rejected';
+    case 'suspended': return 'pill pill-suspended';
+    case 'approving':
+    case 'rotating':  return 'pill pill-transient';
+    default:          return 'pill pill-suspended';
+  }
+}
+
 function InvokerCard({ inv }: { inv: InvokerStatus }) {
   const { data: session } = useSession();
   const myEmail = session?.user?.email ?? '';
-  const cfg = STATUS_CONFIG[inv.approval_status] ?? STATUS_CONFIG['pending'];
   const isApproved = inv.approval_status === 'approved';
 
-  // Per-invoker state
   const [credentials, setCredentials] = useState<{
-    keycloak_client_id?: string;
-    keycloak_secret?:    string;
-    previous_reveal?:    { at: string; actor: string } | null;
+    keycloak_client_id?: string; keycloak_secret?: string;
+    previous_reveal?: { at: string; actor: string } | null;
   } | null>(null);
   const [showSecret, setShowSecret]   = useState(false);
   const [credLoading, setCredLoading] = useState(false);
@@ -77,218 +81,199 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
       const r = await fetch(`/api/invokers/${inv.invoker_id}/credentials`);
       const data = await r.json();
       if (r.ok) setCredentials(data);
-    } finally {
-      setCredLoading(false);
-    }
+    } finally { setCredLoading(false); }
   };
 
   const getToken = async () => {
     if (!credentials?.keycloak_client_id || !credentials?.keycloak_secret) return;
-    setTokenLoading(true);
-    setToken(null);
+    setTokenLoading(true); setToken(null);
     try {
       const r = await fetch('/api/developer/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          client_id:     credentials.keycloak_client_id,
+          client_id: credentials.keycloak_client_id,
           client_secret: credentials.keycloak_secret,
-          scope:         selectedScope,
+          scope: selectedScope,
         }),
       });
       const data = await r.json();
       setToken(data);
       if (data.access_token) {
         const s = SAMPLE_PATHS[selectedScope];
-        if (s) {
-          setTryPath(s.path);
-          setTryMethod(s.method);
-          setTryBody(JSON.stringify(s.body ?? {}, null, 2));
-        }
+        if (s) { setTryPath(s.path); setTryMethod(s.method); setTryBody(JSON.stringify(s.body ?? {}, null, 2)); }
       }
-    } finally {
-      setTokenLoading(false);
-    }
+    } finally { setTokenLoading(false); }
   };
 
   const callApi = async () => {
     if (!tryPath || !token?.access_token) return;
-    setTryLoading(true);
-    setTryResult(null);
+    setTryLoading(true); setTryResult(null);
     try {
       let parsedBody: unknown = {};
       try { parsedBody = tryBody ? JSON.parse(tryBody) : {}; } catch {}
       const r = await fetch('/api/developer/try', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: tryPath, method: tryMethod, token: token.access_token, body: parsedBody }),
       });
-      const data = await r.json();
-      setTryResult(data);
-    } finally {
-      setTryLoading(false);
-    }
+      setTryResult(await r.json());
+    } finally { setTryLoading(false); }
   };
 
   return (
-    <div className={`border rounded-lg p-5 ${cfg.bg}`}>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-bold text-lg text-gray-900">{inv.invoker_name}</h3>
-        <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${cfg.color} ${cfg.bg}`}>
-          {cfg.label}
-        </span>
-      </div>
-      <p className="text-xs text-gray-500 font-mono">{inv.invoker_id}</p>
-      <p className="text-xs text-gray-500 mt-1">Submitted: {new Date(inv.submitted_at).toLocaleString()}</p>
+    <article className="surface-lg overflow-hidden">
+      {/* Card header — title + status, breathing room */}
+      <header className="flex items-start justify-between px-7 pt-7 pb-5 gap-6">
+        <div className="min-w-0">
+          <h3 className="font-display text-[22px] tracking-[-0.015em] text-ink truncate">{inv.invoker_name}</h3>
+          <p className="font-mono text-[11px] text-ink-3 mt-1 truncate">{inv.invoker_id}</p>
+          <p className="text-[12px] text-ink-3 mt-2">
+            Submitted <span className="font-mono">{new Date(inv.submitted_at).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' })}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <SignalIndicator status={inv.approval_status as never} size={32} />
+          <span className={pillClass(inv.approval_status)}>{STATUS_LABEL[inv.approval_status] ?? inv.approval_status}</span>
+        </div>
+      </header>
 
       {inv.approval_status === 'rejected' && inv.rejection_reason && (
-        <p className="mt-2 text-sm text-red-700">Reason: {inv.rejection_reason}</p>
+        <div className="mx-7 mb-6 px-4 py-3 rounded-sm bg-rust-bg border border-rust/20">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-rust mb-1">Reason for rejection</p>
+          <p className="text-[14px] text-ink-2">{inv.rejection_reason}</p>
+        </div>
       )}
 
       {isApproved && (
-        <div className="mt-4 space-y-4">
-          {/* Granted scopes */}
+        <div className="px-7 pb-7 space-y-6">
+          {/* Scope chips */}
           {inv.scopes_approved && inv.scopes_approved.length > 0 && (
             <div>
-              <p className="text-xs text-gray-500 mb-1">Granted API access:</p>
-              <div className="flex flex-wrap gap-1">
+              <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-2">Granted access</p>
+              <div className="flex flex-wrap gap-1.5">
                 {inv.scopes_approved.map(s => (
-                  <span key={s} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">{s}</span>
+                  <span key={s} className="text-[11px] px-2.5 py-1 rounded-full bg-sage-50 text-sage-900 font-mono">
+                    {s}
+                  </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Step 1: Show credentials */}
-          {!credentials ? (
-            <button
-              onClick={loadCreds}
-              disabled={credLoading}
-              className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-            >
-              {credLoading ? 'Loading…' : 'Show Client Credentials'}
-            </button>
-          ) : (
-            <div className="bg-white border rounded p-3 space-y-2">
-              <p className="text-xs text-gray-500">Client ID</p>
-              <p className="font-mono text-sm text-gray-900 break-all">{credentials.keycloak_client_id}</p>
-              <p className="text-xs text-gray-500 mt-2">Client Secret</p>
-              <div className="flex items-center gap-2">
-                <p className="font-mono text-sm text-gray-900 break-all flex-1">
-                  {showSecret ? credentials.keycloak_secret : '•'.repeat(40)}
-                </p>
-                <button onClick={() => setShowSecret(s => !s)} className="text-xs text-blue-600 hover:underline">
-                  {showSecret ? 'Hide' : 'Show'}
-                </button>
-                <button
-                  onClick={() => credentials.keycloak_secret && navigator.clipboard.writeText(credentials.keycloak_secret)}
-                  className="text-xs text-blue-600 hover:underline"
-                >Copy</button>
-              </div>
-              {credentials.previous_reveal && (() => {
-                const when = new Date(credentials.previous_reveal.at).toLocaleString();
-                const who  = credentials.previous_reveal.actor;
-                const isMe = who && myEmail && who === myEmail;
-                return isMe ? (
-                  <p className="text-[11px] text-slate-500 bg-slate-50 rounded px-2 py-1 mt-2 border border-slate-200">
-                    You last viewed this secret on {when}.
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-amber-700 bg-amber-50 rounded px-2 py-1 mt-2 border border-amber-200">
-                    ⚠ Previously revealed to <span className="font-mono">{who}</span> on {when}.
-                    If that wasn&apos;t expected, ask the operator to rotate this secret.
-                  </p>
-                );
-              })()}
-            </div>
-          )}
-
-          {/* Step 2: Get token */}
-          {credentials && (
-            <div className="bg-white border rounded p-4 space-y-3">
-              <h4 className="font-semibold text-gray-800 text-sm">Step 2 — Get an access token</h4>
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Scope</label>
-                  <select
-                    value={selectedScope}
-                    onChange={e => setSelectedScope(e.target.value)}
-                    className="w-full border rounded px-3 py-2 text-sm"
-                  >
-                    {(inv.scopes_approved ?? []).map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+          {/* Credentials block */}
+          <div>
+            {!credentials ? (
+              <button onClick={loadCreds} disabled={credLoading} className="btn-ghost">
+                {credLoading ? 'Loading…' : 'Reveal client credentials'}
+              </button>
+            ) : (
+              <div className="surface p-4 space-y-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-1">Client ID</p>
+                  <p className="font-mono text-[13px] text-ink break-all">{credentials.keycloak_client_id}</p>
                 </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-1">Client Secret</p>
+                  <div className="flex items-center gap-3">
+                    <p className="font-mono text-[13px] text-ink break-all flex-1">
+                      {showSecret ? credentials.keycloak_secret : '•'.repeat(36)}
+                    </p>
+                    <button onClick={() => setShowSecret(s => !s)} className="text-[11px] uppercase tracking-[0.18em] text-sage-700 hover:text-sage-900">
+                      {showSecret ? 'Hide' : 'Show'}
+                    </button>
+                    <button
+                      onClick={() => credentials.keycloak_secret && navigator.clipboard.writeText(credentials.keycloak_secret)}
+                      className="text-[11px] uppercase tracking-[0.18em] text-sage-700 hover:text-sage-900"
+                    >Copy</button>
+                  </div>
+                </div>
+
+                {credentials.previous_reveal && (() => {
+                  const when = new Date(credentials.previous_reveal.at).toLocaleString();
+                  const who  = credentials.previous_reveal.actor;
+                  const isMe = who && myEmail && who === myEmail;
+                  return isMe ? (
+                    <p className="text-[11px] text-ink-3 mt-2">
+                      You last viewed this secret on <span className="font-mono">{when}</span>.
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-amber bg-amber-bg rounded-sm px-3 py-2 mt-2 border border-amber/20">
+                      ⚠ Previously revealed to <span className="font-mono">{who}</span> on <span className="font-mono">{when}</span>.
+                      If that wasn&apos;t expected, ask the operator to rotate.
+                    </p>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+
+          {/* Token step */}
+          {credentials && (
+            <div className="space-y-3">
+              <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Step 2 — Mint a token</p>
+              <div className="flex gap-2 items-end">
+                <select
+                  value={selectedScope}
+                  onChange={e => setSelectedScope(e.target.value)}
+                  className="input flex-1 max-w-xs"
+                >
+                  {(inv.scopes_approved ?? []).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
                 <button
                   onClick={getToken}
                   disabled={tokenLoading || !selectedScope}
-                  className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  className="btn-primary"
                 >
-                  {tokenLoading ? 'Requesting…' : 'Request Token'}
+                  {tokenLoading ? 'Requesting…' : 'Request token'}
                 </button>
               </div>
               {token && (
-                <div className={`rounded border p-2 text-xs ${token.access_token ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                <div className={`px-4 py-3 rounded-sm border text-[12px] ${
+                  token.access_token
+                    ? 'bg-moss-bg border-moss/20 text-ink-2'
+                    : 'bg-rust-bg border-rust/20 text-rust'
+                }`}>
                   {token.access_token ? (
                     <>
-                      <p className="font-medium text-green-800 mb-1">
-                        Token issued (expires in {token.expires_in}s)
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-moss mb-2">
+                        Token issued · expires in {token.expires_in}s
                       </p>
-                      <div className="bg-white rounded p-2 font-mono break-all text-gray-800 max-h-24 overflow-auto">
+                      <div className="font-mono text-[11px] break-all bg-bg-elev rounded p-2 max-h-24 overflow-auto text-ink">
                         {token.access_token}
                       </div>
                     </>
-                  ) : (
-                    <p className="text-red-700">{token.error_description || token.error || 'Token request failed'}</p>
-                  )}
+                  ) : (token.error_description || token.error || 'Token request failed')}
                 </div>
               )}
             </div>
           )}
 
-          {/* Step 3: Try API */}
+          {/* Try-API step */}
           {token?.access_token && (
-            <div className="bg-white border rounded p-4 space-y-3">
-              <h4 className="font-semibold text-gray-800 text-sm">Step 3 — Call the API through Kong</h4>
-              <div className="grid grid-cols-[auto_1fr] gap-2">
-                <select value={tryMethod} onChange={e => setTryMethod(e.target.value)} className="border rounded px-2 py-2 text-sm w-24">
+            <div className="space-y-3">
+              <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Step 3 — Call the API</p>
+              <div className="flex gap-2 items-stretch">
+                <select value={tryMethod} onChange={e => setTryMethod(e.target.value)} className="input w-24 font-mono">
                   <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
                 </select>
-                <input
-                  type="text"
-                  value={tryPath}
-                  onChange={e => setTryPath(e.target.value)}
-                  placeholder="/quality-on-demand/v1/sessions"
-                  className="border rounded px-3 py-2 text-sm font-mono"
-                />
+                <input type="text" value={tryPath} onChange={e => setTryPath(e.target.value)} className="input flex-1 font-mono" />
               </div>
               {tryMethod !== 'GET' && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Request body (JSON)</label>
-                  <textarea
-                    value={tryBody}
-                    onChange={e => setTryBody(e.target.value)}
-                    rows={5}
-                    className="w-full border rounded px-3 py-2 text-xs font-mono"
-                  />
-                </div>
+                <textarea
+                  value={tryBody}
+                  onChange={e => setTryBody(e.target.value)}
+                  rows={5}
+                  className="input font-mono text-[12px]"
+                />
               )}
-              <button
-                onClick={callApi}
-                disabled={tryLoading || !tryPath}
-                className="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {tryLoading ? 'Calling…' : 'Send Request'}
+              <button onClick={callApi} disabled={tryLoading || !tryPath} className="btn-primary">
+                {tryLoading ? 'Calling…' : 'Send request'}
               </button>
               {tryResult && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">
-                    Response: <span className={`px-2 py-0.5 rounded text-xs font-mono ${
-                      tryResult.status && tryResult.status < 400 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>HTTP {tryResult.status ?? '—'}</span>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-1.5">
+                    Response · <span className={`font-mono ${tryResult.status && tryResult.status < 400 ? 'text-moss' : 'text-rust'}`}>HTTP {tryResult.status ?? '—'}</span>
                   </p>
-                  <pre className="bg-gray-900 text-gray-100 rounded p-3 text-xs overflow-auto max-h-60">
+                  <pre className="bg-ink text-bg-elev rounded p-4 text-[11px] font-mono leading-relaxed overflow-auto max-h-60">
                     {typeof tryResult.body === 'string' ? tryResult.body : JSON.stringify(tryResult.body, null, 2)}
                   </pre>
                 </div>
@@ -297,7 +282,7 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
           )}
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -312,45 +297,45 @@ function DeveloperStatusPageInner() {
       const r = await fetch('/api/invokers');
       const data = await r.json();
       setInvokers(Array.isArray(data) ? data : []);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    if (authStatus === 'authenticated') load();
-  }, [authStatus, load]);
+  useEffect(() => { if (authStatus === 'authenticated') load(); }, [authStatus, load]);
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Page header — editorial style */}
+        <div className="flex items-end justify-between mb-12 gap-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Registrations</h1>
-            <p className="text-gray-600 mt-1">
-              Apps registered under <span className="font-mono text-gray-800">{session?.user?.email}</span>.
-              Use the workflow on each card to fetch a token and call the API.
+            <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3 mb-3">Your applications</p>
+            <h1 className="font-display text-[44px] leading-[1.05] tracking-[-0.025em]">
+              My <span className="italic" style={{ fontVariationSettings: "'opsz' 144, 'SOFT' 80, 'WONK' 1" }}>registrations</span>
+            </h1>
+            <p className="mt-3 text-[14px] text-ink-2 max-w-md">
+              Apps registered under <span className="font-mono text-ink">{session?.user?.email}</span>.
+              Reveal credentials, mint tokens, call the network.
             </p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={load} className="text-sm text-blue-600 hover:underline">Refresh</button>
-            <Link href="/developer/register" className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-blue-700">
-              + Register New App
-            </Link>
+          <div className="flex items-center gap-3">
+            <button onClick={load} className="btn-ghost">Refresh</button>
+            <Link href="/developer/register" className="btn-primary">+ Register app</Link>
           </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading…</div>
+          <div className="text-center py-20 text-ink-3 text-[14px]">Loading…</div>
         ) : invokers.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg border">
-            <p className="text-gray-500 mb-4">You haven&apos;t registered any apps yet.</p>
-            <Link href="/developer/register" className="bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700">
-              Register your first app
-            </Link>
+          <div className="surface-lg text-center py-20 px-8">
+            <p className="text-5xl mb-4">📡</p>
+            <h3 className="font-display text-[22px] mb-2">No applications yet</h3>
+            <p className="text-[14px] text-ink-2 mb-6 max-w-md mx-auto">
+              Register your first app to get a signed CAPIF identity and request CAMARA API access.
+            </p>
+            <Link href="/developer/register" className="btn-primary">Register your first app →</Link>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {invokers.map(inv => <InvokerCard key={inv.invoker_id} inv={inv} />)}
           </div>
         )}

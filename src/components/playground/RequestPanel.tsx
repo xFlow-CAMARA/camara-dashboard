@@ -1,6 +1,6 @@
 'use client';
 
-import { type HttpMethod, METHOD_COLORS } from './types';
+import { type HttpMethod } from './types';
 
 interface Props {
   method:      HttpMethod;
@@ -16,6 +16,19 @@ interface Props {
   onSend:      () => void;
 }
 
+const METHOD_BG: Record<HttpMethod, string> = {
+  GET:    'var(--moss-bg)',
+  POST:   'var(--sage-100)',
+  PUT:    'var(--amber-bg)',
+  DELETE: 'var(--rust-bg)',
+};
+const METHOD_FG: Record<HttpMethod, string> = {
+  GET:    'var(--moss)',
+  POST:   'var(--sage-700)',
+  PUT:    'var(--amber)',
+  DELETE: 'var(--rust)',
+};
+
 export default function RequestPanel({
   method, path, bodyText, bearerToken, sending, disabled,
   onMethod, onPath, onBody, onBearer, onSend,
@@ -23,26 +36,15 @@ export default function RequestPanel({
   const hasToken = bearerToken.trim().length > 0;
 
   return (
-    <div className="space-y-3">
-      {/* Bearer token input — paste-or-empty */}
-      <div className={`rounded-lg border bg-white transition-colors ${
-        hasToken ? 'border-emerald-300' : 'border-slate-300'
-      }`}>
-        <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-200">
-          <label className="text-xs font-medium text-slate-600">
-            Authorization · Bearer
-          </label>
-          <div className="flex items-center gap-3">
+    <div className="space-y-4">
+      {/* Bearer token */}
+      <div className={`surface overflow-hidden transition-colors ${hasToken ? 'ring-1 ring-sage-300' : ''}`}>
+        <div className="flex items-center justify-between px-3 py-2 border-b border-hairline">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Authorization · Bearer</p>
+          <div className="flex items-center gap-3 text-[11px]">
+            {hasToken && <span className="text-moss font-mono">● {bearerToken.length} chars</span>}
             {hasToken && (
-              <span className="text-[11px] text-emerald-700">
-                ● {bearerToken.length} chars
-              </span>
-            )}
-            {hasToken && (
-              <button
-                onClick={() => onBearer('')}
-                className="text-[11px] text-slate-500 hover:text-slate-700"
-              >
+              <button onClick={() => onBearer('')} className="uppercase tracking-[0.18em] text-ink-3 hover:text-ink">
                 Clear
               </button>
             )}
@@ -52,18 +54,19 @@ export default function RequestPanel({
           value={bearerToken}
           onChange={e => onBearer(e.target.value)}
           rows={2}
-          placeholder="Paste the token from above here…"
+          placeholder="Paste your access token here…"
           spellCheck={false}
-          className="w-full px-3 py-2 text-xs font-mono text-slate-700 resize-y focus:outline-none rounded-b-lg"
+          className="w-full px-3 py-2 text-[11.5px] font-mono text-ink resize-y focus:outline-none bg-bg-elev"
         />
       </div>
 
-      {/* URL bar */}
-      <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-slate-300 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-300 bg-white">
+      {/* URL bar — method + path + send all in one rounded shell */}
+      <div className="surface overflow-hidden flex items-stretch focus-within:ring-2 focus-within:ring-sage-100 focus-within:border-sage-500 transition-colors">
         <select
           value={method}
           onChange={e => onMethod(e.target.value as HttpMethod)}
-          className={`appearance-none px-3 py-2 text-xs font-mono font-semibold tracking-wider border-r border-slate-300 focus:outline-none ${METHOD_COLORS[method]}`}
+          className="px-3 py-2.5 text-[11px] font-mono font-semibold tracking-wider border-r border-hairline focus:outline-none"
+          style={{ background: METHOD_BG[method], color: METHOD_FG[method] }}
         >
           <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
         </select>
@@ -73,31 +76,32 @@ export default function RequestPanel({
           onChange={e => onPath(e.target.value)}
           placeholder="/quality-on-demand/v1/sessions"
           spellCheck={false}
-          className="flex-1 px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none"
+          className="flex-1 px-3 py-2.5 text-[13px] font-mono text-ink focus:outline-none bg-bg-elev"
         />
         <button
           onClick={onSend}
           disabled={disabled || !hasToken}
           title={!hasToken ? 'Paste a Bearer token first' : ''}
-          className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-sage-700 hover:bg-sage-900 text-bg-elev text-[13px] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          {sending ? '…' : 'Send'}
+          {sending ? '…' : 'Send →'}
         </button>
       </div>
 
-      {/* Body editor */}
+      {/* Body editor — dark; obviously "code" */}
       {method !== 'GET' && (
-        <div className="rounded-lg overflow-hidden border border-slate-300 bg-slate-900">
-          <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800 text-xs text-slate-300">
-            <span>Body · application/json</span>
-            <span className="text-slate-500">{bodyText.length} chars</span>
+        <div className="surface overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 bg-bg-sunken border-b border-hairline">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Body · application/json</p>
+            <span className="text-[11px] text-ink-3 font-mono">{bodyText.length} chars</span>
           </div>
           <textarea
             value={bodyText}
             onChange={e => onBody(e.target.value)}
-            rows={8}
+            rows={9}
             spellCheck={false}
-            className="w-full bg-slate-900 text-slate-100 px-3 py-2 text-xs font-mono leading-relaxed focus:outline-none resize-y"
+            className="w-full px-3 py-2.5 text-[12px] font-mono leading-relaxed focus:outline-none resize-y"
+            style={{ background: 'var(--ink)', color: '#E8E6E1' }}
           />
         </div>
       )}

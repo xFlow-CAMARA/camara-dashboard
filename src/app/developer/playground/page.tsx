@@ -139,18 +139,13 @@ function PlaygroundInner() {
   if (invokers.length === 0) {
     return (
       <Layout>
-        <div className="max-w-2xl mx-auto py-16 text-center">
-          <p className="text-4xl mb-3">🛰️</p>
-          <h1 className="text-2xl font-bold text-slate-900">Nothing to try yet</h1>
-          <p className="text-slate-500 mt-2 mb-6">
-            Register an app and have it approved before sending requests.
+        <div className="max-w-2xl mx-auto surface-lg px-10 py-16 text-center">
+          <p className="text-4xl mb-4">🛰️</p>
+          <h1 className="font-display text-[32px] tracking-[-0.02em] mb-3">Nothing to try yet</h1>
+          <p className="text-[14px] text-ink-2 mb-8 max-w-md mx-auto">
+            Register an app and have it approved before sending requests through the gateway.
           </p>
-          <Link
-            href="/developer/register"
-            className="bg-blue-600 text-white px-5 py-2.5 rounded-full font-medium hover:bg-blue-700"
-          >
-            Register an app →
-          </Link>
+          <Link href="/developer/register" className="btn-primary">Register an app →</Link>
         </div>
       </Layout>
     );
@@ -158,8 +153,14 @@ function PlaygroundInner() {
 
   return (
     <Layout>
-      <div className="space-y-4">
-        {/* App + scope selectors (token indicator removed — it's now its own panel) */}
+      <div className="space-y-6">
+        <div className="mb-2">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3 mb-2">Sandbox</p>
+          <h1 className="font-display text-[40px] leading-[1.05] tracking-[-0.025em]">
+            API <span className="italic" style={{ fontVariationSettings: "'opsz' 144, 'SOFT' 80, 'WONK' 1" }}>playground</span>
+          </h1>
+        </div>
+
         <Toolbar
           invokers={invokers}
           selectedInvokerId={selectedInvokerId}
@@ -185,10 +186,10 @@ function PlaygroundInner() {
           onExpired={onTokenExpired}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-6">
           <aside className="space-y-4">
-            <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-              <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50 border-b">
+            <div className="surface overflow-hidden">
+              <div className="px-3 py-2.5 text-[10px] uppercase tracking-[0.22em] text-ink-3 bg-bg-sunken border-b border-hairline">
                 Endpoints
               </div>
               <EndpointList

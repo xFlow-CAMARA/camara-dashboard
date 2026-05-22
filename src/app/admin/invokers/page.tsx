@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Layout from '@/components/Layout';
 import AuthGuard from '@/components/AuthGuard';
+import SignalIndicator from '@/components/SignalIndicator';
 
 const ALL_APIS = [
   'quality-on-demand',
@@ -26,11 +27,13 @@ interface Invoker {
   scopes_approved?: string[];
 }
 
-const STATUS_BADGE: Record<string, string> = {
-  pending:   'bg-yellow-100 text-yellow-800',
-  approved:  'bg-green-100 text-green-800',
-  rejected:  'bg-red-100 text-red-800',
-  suspended: 'bg-gray-100 text-gray-700',
+const PILL_CLASS: Record<string, string> = {
+  pending:   'pill pill-pending',
+  approved:  'pill pill-approved',
+  rejected:  'pill pill-rejected',
+  suspended: 'pill pill-suspended',
+  approving: 'pill pill-transient',
+  rotating:  'pill pill-transient',
 };
 
 function AdminInvokersPageInner() {
@@ -203,89 +206,93 @@ function AdminInvokersPageInner() {
 
   return (
     <Layout>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6">
+        <div className="flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Invoker Approval Queue</h1>
-            <p className="text-gray-600 text-sm mt-1">Review and approve developer API access requests</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3 mb-2">Operator</p>
+            <h1 className="font-display text-[40px] leading-[1.05] tracking-[-0.025em]">
+              Approval <span className="italic" style={{ fontVariationSettings: "'opsz' 144, 'SOFT' 80, 'WONK' 1" }}>queue</span>
+            </h1>
+            <p className="text-[14px] text-ink-2 mt-2 max-w-xl">Review developer registrations, grant per-API scopes, and manage rotation.</p>
           </div>
-          <button onClick={load} className="text-sm text-blue-600 hover:underline">Refresh</button>
+          <button onClick={load} className="btn-ghost">Refresh</button>
         </div>
 
-        {/* Status filter */}
-        <div className="flex gap-2">
+        {/* Filter chips */}
+        <div className="flex gap-2 flex-wrap">
           {['', 'pending', 'approved', 'rejected', 'suspended'].map(s => (
             <button
               key={s}
               onClick={() => setFilter(s)}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-full text-[12px] uppercase tracking-[0.1em] transition-colors ${
                 filter === s
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border text-gray-700 hover:bg-gray-50'
+                  ? 'bg-sage-700 text-bg-elev'
+                  : 'bg-bg-elev border border-hairline text-ink-2 hover:border-hairline-2'
               }`}
             >
-              {s === '' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+              {s === '' ? 'All' : s}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading…</div>
+          <div className="text-center py-16 text-ink-3 text-[14px]">Loading…</div>
         ) : invokers.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 bg-white rounded-lg border">
-            No invokers with status &quot;{filter || 'any'}&quot;
+          <div className="surface text-center py-16 text-[14px] text-ink-3">
+            No invokers with status <span className="font-mono">{filter || 'any'}</span>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Application</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Company</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Requested APIs</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Submitted</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
+          <div className="surface-lg overflow-hidden">
+            <table className="w-full text-[13.5px]">
+              <thead className="bg-bg-sunken border-b border-hairline">
+                <tr className="text-[10px] uppercase tracking-[0.18em] text-ink-3">
+                  <th className="text-left px-5 py-3 font-medium">Application</th>
+                  <th className="text-left px-5 py-3 font-medium">Company</th>
+                  <th className="text-left px-5 py-3 font-medium">Requested APIs</th>
+                  <th className="text-left px-5 py-3 font-medium">Submitted</th>
+                  <th className="text-left px-5 py-3 font-medium">Status</th>
+                  <th className="text-left px-5 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-hairline">
                 {invokers.map(inv => (
-                  <tr key={inv.invoker_id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{inv.invoker_name}</div>
-                      <div className="text-xs text-gray-400">{inv.contact_email}</div>
+                  <tr key={inv.invoker_id} className="hover:bg-bg-sunken transition-colors">
+                    <td className="px-5 py-4">
+                      <div className="font-medium text-ink">{inv.invoker_name}</div>
+                      <div className="font-mono text-[11px] text-ink-3 mt-0.5">{inv.contact_email}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{inv.company || '—'}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4 text-ink-2">{inv.company || <span className="text-ink-3">—</span>}</td>
+                    <td className="px-5 py-4">
                       <div className="flex flex-wrap gap-1">
                         {(inv.requested_apis ?? []).slice(0, 3).map(a => (
-                          <span key={a} className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">{a}</span>
+                          <span key={a} className="text-[11px] font-mono bg-sage-50 text-sage-900 px-1.5 py-0.5 rounded-sm">{a}</span>
                         ))}
                         {(inv.requested_apis ?? []).length > 3 && (
-                          <span className="text-xs text-gray-400">+{(inv.requested_apis ?? []).length - 3}</span>
+                          <span className="text-[11px] text-ink-3">+{(inv.requested_apis ?? []).length - 3}</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
-                      {new Date(inv.submitted_at).toLocaleDateString()}
+                    <td className="px-5 py-4 text-ink-3 font-mono text-[12px]">
+                      {new Date(inv.submitted_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${STATUS_BADGE[inv.approval_status] ?? 'bg-gray-100'}`}>
-                        {inv.approval_status}
-                      </span>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2.5">
+                        <SignalIndicator status={inv.approval_status as never} size={26} />
+                        <span className={PILL_CLASS[inv.approval_status] ?? 'pill pill-suspended'}>{inv.approval_status}</span>
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
+                    <td className="px-5 py-4">
+                      <div className="flex gap-1.5">
                         {inv.approval_status === 'pending' && (
                           <>
-                            <button onClick={() => openApprove(inv)} className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700">Approve</button>
-                            <button onClick={() => openReject(inv)}  className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">Reject</button>
+                            <button onClick={() => openApprove(inv)} className="text-[11px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm bg-moss text-bg-elev hover:opacity-90">Approve</button>
+                            <button onClick={() => openReject(inv)}  className="text-[11px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm bg-rust-bg text-rust hover:bg-rust hover:text-bg-elev transition-colors">Reject</button>
                           </>
                         )}
                         {inv.approval_status === 'approved' && (
                           <>
-                            <button onClick={() => openRotate(inv)} className="text-xs bg-amber-600 text-white px-2 py-1 rounded hover:bg-amber-700">Rotate Secret</button>
-                            <button onClick={() => openRevoke(inv)} className="text-xs bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700">Revoke</button>
+                            <button onClick={() => openRotate(inv)} className="text-[11px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm bg-amber-bg text-amber hover:bg-amber hover:text-bg-elev transition-colors">Rotate</button>
+                            <button onClick={() => openRevoke(inv)} className="text-[11px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm bg-slate-bg text-slate hover:bg-slate hover:text-bg-elev transition-colors">Revoke</button>
                           </>
                         )}
                       </div>
@@ -297,24 +304,16 @@ function AdminInvokersPageInner() {
           </div>
         )}
 
-        {/* Pagination controls — visible only when we have any data */}
+        {/* Pagination */}
         {invokers.length > 0 && (
-          <div className="flex items-center justify-between text-sm text-slate-600">
-            <span>
+          <div className="flex items-center justify-between text-[12px]">
+            <span className="text-ink-3 font-mono">
               Showing {page * PAGE_SIZE + 1}–{page * PAGE_SIZE + invokers.length}
-              {hasMore ? '' : ' (end)'}
+              {hasMore ? '' : ' · end'}
             </span>
             <div className="flex gap-2">
-              <button
-                onClick={() => setPage(page - 1)}
-                disabled={page === 0}
-                className="px-3 py-1 rounded border bg-white disabled:opacity-40"
-              >← Prev</button>
-              <button
-                onClick={() => setPage(page + 1)}
-                disabled={!hasMore}
-                className="px-3 py-1 rounded border bg-white disabled:opacity-40"
-              >Next →</button>
+              <button onClick={() => setPage(page - 1)} disabled={page === 0} className="btn-ghost disabled:opacity-40">← Prev</button>
+              <button onClick={() => setPage(page + 1)} disabled={!hasMore} className="btn-ghost disabled:opacity-40">Next →</button>
             </div>
           </div>
         )}
@@ -322,71 +321,95 @@ function AdminInvokersPageInner() {
 
       {/* Modal overlay */}
       {modal && selected && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-1">
-              {modal === 'approve' ? 'Approve Invoker' :
-               modal === 'reject'  ? 'Reject Invoker'  :
-               modal === 'revoke'  ? 'Revoke Access'   :
-                                     'Rotate Client Secret'}
+        <div className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="surface-lg max-w-lg w-full p-7">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3 mb-2">
+              {modal === 'approve' ? 'Approval' :
+               modal === 'reject'  ? 'Rejection'  :
+               modal === 'revoke'  ? 'Revocation'   :
+                                     'Secret rotation'}
+            </p>
+            <h2 className="font-display text-[24px] tracking-[-0.015em] text-ink mb-1">
+              {modal === 'approve' ? 'Grant access to this invoker' :
+               modal === 'reject'  ? 'Reject this registration' :
+               modal === 'revoke'  ? 'Revoke an active invoker' :
+                                     'Rotate the client secret'}
             </h2>
-            <p className="text-sm text-gray-500 mb-4">{selected.invoker_name} — {selected.contact_email}</p>
+            <p className="text-[13px] text-ink-2 mb-5">
+              <span className="font-medium text-ink">{selected.invoker_name}</span>
+              <span className="text-ink-3 mx-1.5">·</span>
+              <span className="font-mono text-[12px]">{selected.contact_email}</span>
+            </p>
 
             {modal === 'approve' && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Grant access to:</label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {ALL_APIS.map(api => (
-                      <label key={api} className={`flex items-center gap-2 p-2 rounded border cursor-pointer text-sm ${approveScopes.includes(api) ? 'bg-green-50 border-green-400' : 'bg-gray-50 border-gray-200'}`}>
-                        <input type="checkbox" checked={approveScopes.includes(api)} onChange={() => setApproveScopes(s => s.includes(api) ? s.filter(x => x !== api) : [...s, api])} className="accent-green-600" />
-                        {api}
-                      </label>
-                    ))}
+                  <label className="block text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-2">Grant access to</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ALL_APIS.map(api => {
+                      const on = approveScopes.includes(api);
+                      return (
+                        <label
+                          key={api}
+                          className={`flex items-center gap-2 p-2 rounded-sm border cursor-pointer text-[12.5px] transition-all ${
+                            on ? 'bg-sage-50 border-sage-300' : 'bg-bg-elev border-hairline hover:border-hairline-2'
+                          }`}
+                        >
+                          <input
+                            type="checkbox" checked={on}
+                            onChange={() => setApproveScopes(s => s.includes(api) ? s.filter(x => x !== api) : [...s, api])}
+                            className="accent-sage-500"
+                          />
+                          <span className="font-mono">{api}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Approved by</label>
-                  <input type="text" value={approvedBy} onChange={e => setApprovedBy(e.target.value)} className="w-full border rounded px-3 py-2 text-sm" />
+                  <label className="block text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-1.5">Approved by</label>
+                  <input type="text" value={approvedBy} onChange={e => setApprovedBy(e.target.value)} className="input" />
                 </div>
               </div>
             )}
 
             {modal === 'reject' && (
               <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700">Rejection reason</label>
-                <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} className="w-full border rounded px-3 py-2 text-sm" placeholder="Please explain why this request is rejected…" />
+                <label className="block text-[10px] uppercase tracking-[0.22em] text-ink-3">Rejection reason</label>
+                <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} className="input" placeholder="Explain why this request is rejected…" />
               </div>
             )}
 
             {modal === 'revoke' && (
               <div className="space-y-3">
-                <p className="text-sm text-red-600">This will delete the Keycloak client. Active tokens will immediately stop working.</p>
-                <label className="block text-sm font-medium text-gray-700">Reason for revocation</label>
-                <textarea value={revokeReason} onChange={e => setRevokeReason(e.target.value)} rows={2} className="w-full border rounded px-3 py-2 text-sm" />
+                <p className="text-[13px] text-rust bg-rust-bg border border-rust/20 rounded-sm px-3 py-2.5">
+                  This deletes the Keycloak client. Active tokens stop working immediately at Kong.
+                </p>
+                <label className="block text-[10px] uppercase tracking-[0.22em] text-ink-3">Reason for revocation</label>
+                <textarea value={revokeReason} onChange={e => setRevokeReason(e.target.value)} rows={2} className="input" />
               </div>
             )}
 
             {modal === 'rotate' && (
               <div className="space-y-3">
-                <p className="text-sm text-amber-700">
-                  The current Keycloak client secret will be invalidated immediately and a new one issued.
-                  Existing access tokens minted with the old secret keep working until their expiry, but
-                  no new tokens can be issued with the old secret.
+                <p className="text-[13px] text-amber bg-amber-bg border border-amber/20 rounded-sm px-3 py-2.5">
+                  The current Keycloak secret is invalidated immediately. Existing tokens keep working until they expire; new tokens require the new secret.
                 </p>
-                <label className="block text-sm font-medium text-gray-700">Reason (optional)</label>
-                <textarea value={rotateReason} onChange={e => setRotateReason(e.target.value)} rows={2} className="w-full border rounded px-3 py-2 text-sm" placeholder="e.g. developer lost the secret" />
+                <label className="block text-[10px] uppercase tracking-[0.22em] text-ink-3">Reason (optional)</label>
+                <textarea value={rotateReason} onChange={e => setRotateReason(e.target.value)} rows={2} className="input" placeholder="e.g. developer lost the secret" />
               </div>
             )}
 
             {actionResult && (
-              <div className={`mt-3 p-3 rounded text-sm ${actionResult.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'}`}>
+              <div className={`mt-4 px-3 py-2.5 rounded-sm text-[12.5px] whitespace-pre-wrap ${
+                actionResult.ok ? 'bg-moss-bg text-ink-2 border border-moss/20' : 'bg-rust-bg text-rust border border-rust/20'
+              }`}>
                 {actionResult.msg}
               </div>
             )}
 
-            <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setModal(null)} className="px-4 py-2 text-sm text-gray-600 border rounded hover:bg-gray-50">
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setModal(null)} className="btn-ghost">
                 {actionResult?.ok ? 'Close' : 'Cancel'}
               </button>
               {!actionResult?.ok && (
@@ -403,19 +426,19 @@ function AdminInvokersPageInner() {
                     (modal === 'reject' && !rejectReason) ||
                     (modal === 'revoke' && !revokeReason)
                   }
-                  className={`px-4 py-2 text-sm text-white rounded font-medium disabled:opacity-50 ${
-                    modal === 'approve' ? 'bg-green-600 hover:bg-green-700' :
-                    modal === 'reject'  ? 'bg-red-600 hover:bg-red-700' :
-                    modal === 'revoke'  ? 'bg-gray-700 hover:bg-gray-800' :
-                                          'bg-amber-600 hover:bg-amber-700'
-                  }`}
+                  className="btn-primary"
+                  style={
+                    modal === 'reject'  ? { background: 'var(--rust)' } :
+                    modal === 'rotate'  ? { background: 'var(--amber)' } :
+                    modal === 'revoke'  ? { background: 'var(--slate)' } : undefined
+                  }
                 >
                   {actionLoading
                     ? 'Processing…'
                     : modal === 'approve' ? 'Approve & Create Client'
-                    : modal === 'reject'  ? 'Reject'
-                    : modal === 'revoke'  ? 'Revoke'
-                    :                       'Rotate Secret'}
+                    : modal === 'reject'  ? 'Reject registration'
+                    : modal === 'revoke'  ? 'Revoke access'
+                    :                       'Rotate secret'}
                 </button>
               )}
             </div>

@@ -21,45 +21,45 @@ export default function Toolbar({
   const selectedInvoker = invokers.find(i => i.invoker_id === selectedInvokerId);
   const scopes = selectedInvoker?.scopes_approved ?? [];
 
-  const tokenDot =
-    tokenStatus === 'valid'    ? 'bg-emerald-500'  :
-    tokenStatus === 'fetching' ? 'bg-amber-400 animate-pulse' :
-    tokenStatus === 'error'    ? 'bg-rose-500'     :
-                                 'bg-slate-300';
+  const dotColor =
+    tokenStatus === 'valid'    ? 'var(--moss)'  :
+    tokenStatus === 'fetching' ? 'var(--amber)' :
+    tokenStatus === 'error'    ? 'var(--rust)'  :
+                                 'var(--ink-3)';
 
   return (
-    <div className="flex items-center justify-between gap-3 flex-wrap">
-      <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mr-2">App</span>
         <select
           value={selectedInvokerId}
           onChange={e => onInvokerChange(e.target.value)}
-          className="bg-white border border-slate-300 rounded-full px-4 py-1.5 text-sm font-medium text-slate-800 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="bg-bg-elev border border-hairline rounded-full px-4 py-1.5 text-[13px] text-ink hover:border-hairline-2 focus:outline-none focus:border-sage-500"
+          style={{ boxShadow: 'var(--shadow-sm)' }}
         >
-          {invokers.map(inv => (
-            <option key={inv.invoker_id} value={inv.invoker_id}>{inv.invoker_name}</option>
-          ))}
+          {invokers.map(inv => <option key={inv.invoker_id} value={inv.invoker_id}>{inv.invoker_name}</option>)}
         </select>
 
-        <span className="text-slate-400">/</span>
-
+        <span className="mx-1 text-ink-3">·</span>
+        <span className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mr-2">API</span>
         <select
           value={selectedScope}
           onChange={e => onScopeChange(e.target.value)}
           disabled={scopes.length === 0}
-          className="bg-white border border-slate-300 rounded-full px-4 py-1.5 text-sm font-medium text-slate-800 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
+          className="bg-bg-elev border border-hairline rounded-full px-4 py-1.5 text-[13px] font-mono text-ink hover:border-hairline-2 focus:outline-none focus:border-sage-500 disabled:opacity-50"
+          style={{ boxShadow: 'var(--shadow-sm)' }}
         >
-          {scopes.length === 0
-            ? <option>No scopes granted</option>
+          {scopes.length === 0 ? <option>No scopes granted</option>
             : scopes.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-slate-600">
-        <span className={`inline-block w-2 h-2 rounded-full ${tokenDot}`} />
-        {tokenStatus === 'valid'    && <span>Token active · <TokenCountdown expiresAt={tokenExpiresAt ?? null} /></span>}
-        {tokenStatus === 'fetching' && <span>Fetching token…</span>}
-        {tokenStatus === 'error'    && <span className="text-rose-600">Token error</span>}
-        {tokenStatus === 'none'     && <span>No token yet</span>}
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-ink-3">
+        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: dotColor }} />
+        {tokenStatus === 'valid'    && <>Token live · <TokenCountdown expiresAt={tokenExpiresAt ?? null} /></>}
+        {tokenStatus === 'fetching' && 'Fetching…'}
+        {tokenStatus === 'error'    && <span className="text-rust">Token error</span>}
+        {tokenStatus === 'none'     && 'No token'}
       </div>
     </div>
   );
