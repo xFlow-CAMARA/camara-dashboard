@@ -87,6 +87,18 @@ function LoginForm() {
           </button>
         </form>
 
+        <div className="mt-4 text-center">
+          <a
+            href={`${process.env.NEXT_PUBLIC_KEYCLOAK_PUBLIC_URL || 'http://localhost:8180'}/realms/camara/protocol/openid-connect/registrations?client_id=camara-dashboard-app&response_type=code&redirect_uri=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin + '/login' : 'http://localhost:3100/login')}`}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            New here? Sign up
+          </a>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Self-service signs you up as a developer. Admins are provisioned by the operator.
+          </p>
+        </div>
+
         <button
           onClick={() => setShowHint(s => !s)}
           className="w-full mt-4 text-xs text-gray-500 hover:underline"
