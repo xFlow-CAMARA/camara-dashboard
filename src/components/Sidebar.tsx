@@ -15,7 +15,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { data: session } = useSession();
   const roles = session?.user?.roles ?? [];
   const isAdmin = roles.includes('admin');
-  const [camaraExpanded, setCamaraExpanded] = useState(true);
   const [developerExpanded, setDeveloperExpanded] = useState(true);
   const [adminExpanded, setAdminExpanded] = useState(true);
 
@@ -62,94 +61,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </svg>
                 Home (5G Cores)
               </Link>
-
-              {/* CAMARA APIs Section */}
-              <div>
-                <button
-                  onClick={() => setCamaraExpanded(!camaraExpanded)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded"
-                >
-                  <span className="flex items-center">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    CAMARA APIs
-                  </span>
-                  <svg 
-                    className={`w-4 h-4 transition-transform ${camaraExpanded ? 'rotate-90' : ''}`}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-
-                {camaraExpanded && (
-                  <div className="ml-8 mt-1 space-y-1">
-                    <Link
-                      href="/qod"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/qod') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Quality on Demand
-                    </Link>
-                    <Link
-                      href="/location"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/location') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Device Location
-                    </Link>
-                    <Link
-                      href="/traffic-influence"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/traffic-influence') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Traffic Influence
-                    </Link>
-                    <Link
-                      href="/number-verification"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/number-verification') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Number Verification
-                    </Link>
-                    <Link
-                      href="/device-status"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/device-status') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Device Status
-                    </Link>
-                    <Link
-                      href="/sim-swap"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/sim-swap') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      SIM Swap
-                    </Link>
-                  </div>
-                )}
-              </div>
 
               {/* Service Registry */}
               <Link
