@@ -4,6 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "CAMARA API Dashboard",
   description: "Test and monitor CAMARA APIs with multiple 5G core backends",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

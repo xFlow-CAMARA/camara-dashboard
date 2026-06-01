@@ -179,20 +179,24 @@ export default function QodPanel() {
   const testEndpoint = async (method: string, endpoint: string) => {
     setTestLoading(true);
     setTestResult(null);
+    const adapter = localStorage.getItem('selectedCore') || localStorage.getItem('selectedAdapter') || 'coresim';
     
     try {
       let url = `/api/qod`;
       let options: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adapter }),
       };
 
       if (method === 'GET' && result?.sessionId) {
-        url = `/api/qod?sessionId=${result.sessionId}`;
+        url = `/api/qod?sessionId=${result.sessionId}&adapter=${adapter}`;
         options.method = 'GET';
+        delete (options as any).body;
       } else if (method === 'DELETE' && result?.sessionId) {
-        url = `/api/qod?sessionId=${result.sessionId}`;
+        url = `/api/qod?sessionId=${result.sessionId}&adapter=${adapter}`;
         options.method = 'DELETE';
+        delete (options as any).body;
       }
 
       const response = await fetch(url, options);

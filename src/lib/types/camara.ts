@@ -263,8 +263,20 @@ export interface DeviceStatusSubscriptionResponse {
 }
 
 // Backend Adapter Interface
+export type CamaraApiId =
+  | 'qod'
+  | 'location'
+  | 'traffic-influence'
+  | 'number-verification'
+  | 'sim-swap'
+  | 'device-status';
+
 export interface BackendAdapter {
   name: string;
+  /** APIs explicitly NOT supported by this adapter. Omit or leave empty for full support. */
+  unsupportedApis?: readonly CamaraApiId[];
+  /** Human-readable explanation per unsupported API id. */
+  unsupportedReasons?: Record<string, string>;
   createQodSession(request: QodSession): Promise<QodSessionResponse>;
   getQodSession(sessionId: string): Promise<QodSessionResponse>;
   deleteQodSession(sessionId: string): Promise<void>;

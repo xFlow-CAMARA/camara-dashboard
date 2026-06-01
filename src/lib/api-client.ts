@@ -42,6 +42,18 @@ class ApiClient {
     return generateUUID();
   }
 
+  /**
+   * Read the currently selected 5G core adapter from localStorage.
+   * Falls back to 'coresim' when called server-side or before selection.
+   */
+  private getSelectedAdapter(): string {
+    if (typeof window !== 'undefined') {
+      // Header.tsx writes 'selectedCore'; AdapterSelector writes 'selectedAdapter'
+      return localStorage.getItem('selectedCore') || localStorage.getItem('selectedAdapter') || 'coresim';
+    }
+    return 'coresim';
+  }
+
   private async request<T>(
     endpoint: string,
     options: FetchOptions = {}
@@ -161,16 +173,16 @@ class ApiClient {
     return this.request<any>('/api/qod', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
   async getQodSession(sessionId: string): Promise<any> {
-    return this.request<any>(`/api/qod?sessionId=${sessionId}`);
+    return this.request<any>(`/api/qod?sessionId=${sessionId}&adapter=${this.getSelectedAdapter()}`);
   }
 
   async deleteQodSession(sessionId: string): Promise<any> {
-    return this.request<any>(`/api/qod?sessionId=${sessionId}`, {
+    return this.request<any>(`/api/qod?sessionId=${sessionId}&adapter=${this.getSelectedAdapter()}`, {
       method: 'DELETE',
     });
   }
@@ -180,7 +192,7 @@ class ApiClient {
     return this.request<any>('/api/location', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
@@ -188,7 +200,7 @@ class ApiClient {
     return this.request<any>('/api/location?action=verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
@@ -197,16 +209,16 @@ class ApiClient {
     return this.request<any>('/api/traffic-influence', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
   async getTrafficInfluence(subscriptionId: string): Promise<any> {
-    return this.request<any>(`/api/traffic-influence?subscriptionId=${subscriptionId}`);
+    return this.request<any>(`/api/traffic-influence?subscriptionId=${subscriptionId}&adapter=${this.getSelectedAdapter()}`);
   }
 
   async deleteTrafficInfluence(subscriptionId: string): Promise<any> {
-    return this.request<any>(`/api/traffic-influence?subscriptionId=${subscriptionId}`, {
+    return this.request<any>(`/api/traffic-influence?subscriptionId=${subscriptionId}&adapter=${this.getSelectedAdapter()}`, {
       method: 'DELETE',
     });
   }
@@ -216,12 +228,12 @@ class ApiClient {
     return this.request<any>('/api/number-verification/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
   async getDevicePhoneNumber(deviceIp: string): Promise<any> {
-    return this.request<any>(`/api/number-verification/device-phone-number?deviceIp=${encodeURIComponent(deviceIp)}`);
+    return this.request<any>(`/api/number-verification/device-phone-number?deviceIp=${encodeURIComponent(deviceIp)}&adapter=${this.getSelectedAdapter()}`);
   }
 
   // Device Status endpoints (CAMARA Device Reachability & Roaming Status APIs)
@@ -234,7 +246,7 @@ class ApiClient {
     return this.request<any>('/api/device-status/reachability/retrieve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
@@ -246,7 +258,7 @@ class ApiClient {
     return this.request<any>('/api/device-status/roaming/retrieve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
@@ -257,16 +269,15 @@ class ApiClient {
     return this.request<any>('/api/device-status/reachability/subscriptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
   /**
    * Delete a reachability status subscription
    */
-  async deleteReachabilitySubscription(subscriptionId: string, adapter?: string): Promise<any> {
-    const query = adapter ? `?adapter=${adapter}` : '';
-    return this.request<any>(`/api/device-status/reachability/subscriptions/${subscriptionId}${query}`, {
+  async deleteReachabilitySubscription(subscriptionId: string): Promise<any> {
+    return this.request<any>(`/api/device-status/reachability/subscriptions/${subscriptionId}?adapter=${this.getSelectedAdapter()}`, {
       method: 'DELETE',
     });
   }
@@ -278,16 +289,15 @@ class ApiClient {
     return this.request<any>('/api/device-status/roaming/subscriptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
   /**
    * Delete a roaming status subscription
    */
-  async deleteRoamingSubscription(subscriptionId: string, adapter?: string): Promise<any> {
-    const query = adapter ? `?adapter=${adapter}` : '';
-    return this.request<any>(`/api/device-status/roaming/subscriptions/${subscriptionId}${query}`, {
+  async deleteRoamingSubscription(subscriptionId: string): Promise<any> {
+    return this.request<any>(`/api/device-status/roaming/subscriptions/${subscriptionId}?adapter=${this.getSelectedAdapter()}`, {
       method: 'DELETE',
     });
   }
@@ -303,7 +313,7 @@ class ApiClient {
     return this.request<{ swapped: boolean }>('/api/sim-swap/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 
@@ -316,7 +326,7 @@ class ApiClient {
     return this.request<{ latestSimChange: string | null; monitoredPeriod?: number }>('/api/sim-swap/retrieve-date', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, adapter: this.getSelectedAdapter() }),
     });
   }
 }

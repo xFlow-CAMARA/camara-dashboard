@@ -156,20 +156,24 @@ export default function TrafficInfluencePanel() {
   const testEndpoint = async (method: string, endpoint: string) => {
     setTestLoading(true);
     setTestResult(null);
+    const adapter = localStorage.getItem('selectedCore') || localStorage.getItem('selectedAdapter') || 'coresim';
     
     try {
       let url = `/api/traffic-influence`;
       let options: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adapter }),
       };
 
       if (method === 'GET' && result?.subscriptionId) {
-        url = `/api/traffic-influence?subscriptionId=${result.subscriptionId}`;
+        url = `/api/traffic-influence?subscriptionId=${result.subscriptionId}&adapter=${adapter}`;
         options.method = 'GET';
+        delete (options as any).body;
       } else if (method === 'DELETE' && result?.subscriptionId) {
-        url = `/api/traffic-influence?subscriptionId=${result.subscriptionId}`;
+        url = `/api/traffic-influence?subscriptionId=${result.subscriptionId}&adapter=${adapter}`;
         options.method = 'DELETE';
+        delete (options as any).body;
       }
 
       const response = await fetch(url, options);

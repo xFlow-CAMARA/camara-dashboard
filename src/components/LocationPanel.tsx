@@ -222,6 +222,7 @@ export default function LocationPanel() {
     setTestResult(null);
     
     try {
+      const adapter = localStorage.getItem('selectedCore') || localStorage.getItem('selectedAdapter') || 'coresim';
       const url = `/api/location`;
       const options: RequestInit = {
         method: 'POST',
@@ -231,6 +232,7 @@ export default function LocationPanel() {
             networkAccessIdentifier: formData.networkAccessIdentifier,
           },
           maxAge: formData.maxAge,
+          adapter,
         }),
       };
 

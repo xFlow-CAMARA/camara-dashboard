@@ -2,6 +2,7 @@
 
 import Layout from '@/components/Layout';
 import DeviceStatusPanel from '@/components/DeviceStatusPanel';
+import NotSupportedBanner from '@/components/NotSupportedBanner';
 
 export default function DeviceStatusPage() {
   return (
@@ -11,10 +12,11 @@ export default function DeviceStatusPage() {
           <h1 className="text-2xl font-bold text-gray-900">Device Status</h1>
           <p className="text-gray-600 mt-1">Check device reachability and roaming status using CAMARA APIs</p>
         </div>
-
-        <div className="w-full">
-          <DeviceStatusPanel />
-        </div>
+        <NotSupportedBanner apiId="device-status">
+          <div className="w-full">
+            <DeviceStatusPanel />
+          </div>
+        </NotSupportedBanner>
       </div>
     </Layout>
   );

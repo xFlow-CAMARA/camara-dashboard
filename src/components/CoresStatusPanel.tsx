@@ -143,8 +143,8 @@ export default function CoresStatusPanel() {
         const freshData = await apiClient.getCores();
         const currentCore = freshData?.cores?.find((c: any) => c.name === coreName);
         
-        // Accept both STARTED and CONFIGURED states as success after restart
-        if (currentCore?.connected && (currentCore?.status === 'STARTED' || currentCore?.status === 'CONFIGURED')) {
+        // Accept both RUNNING and CONFIGURED states as success after restart
+        if (currentCore?.connected && (currentCore?.status === 'RUNNING' || currentCore?.status === 'CONFIGURED')) {
           setRestartStatus('✓ Restart successful!');
           await fetchCores(); // Final refresh to update UI
           setTimeout(() => {
@@ -235,7 +235,7 @@ export default function CoresStatusPanel() {
                         Edit Config
                       </button>
                     )}
-                    {core.connected && (
+                    {core.connected && core.type === 'simulator' && (
                       <>
                         <button
                           onClick={() => handleControl(core.name, 'stop')}
@@ -257,7 +257,7 @@ export default function CoresStatusPanel() {
                         </span>
                       </>
                     )}
-                    {!core.connected && core.hasConfig && (
+                    {!core.connected && core.hasConfig && core.type === 'simulator' && (
                       <>
                         <button
                           onClick={() => handleControl(core.name, 'start')}

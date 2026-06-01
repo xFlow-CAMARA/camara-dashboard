@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Free5GCAdapter } from '@/lib/adapters/free5gc-tfsdk';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,8 +13,44 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [camaraExpanded, setCamaraExpanded] = useState(true);
+  const [unsupportedApis, setUnsupportedApis] = useState<readonly string[]>([]);
 
   const isActive = (path: string) => pathname === path;
+
+  // Determine which APIs are unsupported by the current adapter
+  useEffect(() => {
+    // Header.tsx writes 'selectedCore'; AdapterSelector writes 'selectedAdapter'
+    const saved =
+      localStorage.getItem('selectedCore') ||
+      localStorage.getItem('selectedAdapter') ||
+      'coresim';
+    if (saved === 'free5gc') {
+      setUnsupportedApis(Free5GCAdapter.unsupportedApis);
+    } else {
+      setUnsupportedApis([]);
+    }
+  }, []);
+
+  const isUnsupported = (apiId: string) => unsupportedApis.includes(apiId);
+
+  const camaraNavItem = (href: string, apiId: string, label: string) => (
+    <Link
+      key={href}
+      href={href}
+      className={`flex items-center justify-between px-3 py-2 text-sm rounded ${
+        isActive(href)
+          ? 'bg-blue-50 text-blue-700 font-medium'
+          : 'text-gray-600 hover:bg-gray-100'
+      }`}
+    >
+      <span>{label}</span>
+      {isUnsupported(apiId) && (
+        <span className="ml-1 flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+          N/S
+        </span>
+      )}
+    </Link>
+  );
 
   return (
     <>
@@ -80,66 +117,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                 {camaraExpanded && (
                   <div className="ml-8 mt-1 space-y-1">
-                    <Link
-                      href="/qod"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/qod') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Quality on Demand
-                    </Link>
-                    <Link
-                      href="/location"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/location') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Device Location
-                    </Link>
-                    <Link
-                      href="/traffic-influence"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/traffic-influence') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Traffic Influence
-                    </Link>
-                    <Link
-                      href="/number-verification"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/number-verification') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Number Verification
-                    </Link>
-                    <Link
-                      href="/device-status"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/device-status') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Device Status
-                    </Link>
-                    <Link
-                      href="/sim-swap"
-                      className={`block px-3 py-2 text-sm rounded ${
-                        isActive('/sim-swap') 
-                          ? 'bg-blue-50 text-blue-700 font-medium' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      SIM Swap
-                    </Link>
+                    {camaraNavItem('/qod', 'qod', 'Quality on Demand')}
+                    {camaraNavItem('/location', 'location', 'Device Location')}
+                    {camaraNavItem('/traffic-influence', 'traffic-influence', 'Traffic Influence')}
+                    {camaraNavItem('/number-verification', 'number-verification', 'Number Verification')}
+                    {camaraNavItem('/device-status', 'device-status', 'Device Status')}
+                    {camaraNavItem('/sim-swap', 'sim-swap', 'SIM Swap')}
                   </div>
                 )}
               </div>
@@ -179,7 +162,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Footer */}
           <div className="p-4 border-t border-gray-200">
             <div className="text-xs text-gray-500">
-              <p className="font-medium text-gray-700 mb-1">CoreSim Simulator</p>
+              <p className="font-medium text-gray-700 mb-1">
+                {unsupportedApis.length > 0 ? 'free5GC Core' : 'CoreSim Simulator'}
+              </p>
               <p>Version 1.0.0</p>
             </div>
           </div>
