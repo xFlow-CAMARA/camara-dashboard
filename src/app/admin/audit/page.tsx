@@ -90,28 +90,60 @@ function AdminAuditPageInner() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-end justify-between gap-6 flex-wrap">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3 mb-2">Governance</p>
-            <h1 className="font-display text-[40px] leading-[1.05] tracking-[-0.025em]">
-              Audit{' '}
-              <span className="italic" style={{ fontVariationSettings: "'opsz' 144, 'SOFT' 80, 'WONK' 1" }}>
-                trail
-              </span>
+      <div className="space-y-4">
+        {/* Hero bento — 3 tiles */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_0.7fr_0.7fr] gap-4">
+          <div className="card-lg p-8 lg:p-10 relative overflow-hidden">
+            <p className="eyebrow mb-4">Governance</p>
+            <h1 className="font-display text-[clamp(40px,5vw,60px)] leading-[0.92] tracking-[-0.035em] text-ink" style={{ fontWeight: 800 }}>
+              Audit<br />trail.
             </h1>
-            <p className="text-[13px] text-ink-3 mt-2 max-w-md">
+            <p className="mt-4 text-[14px] text-ink-2 max-w-md">
               An immutable record of every approval, rotation, and revocation. The system writes; no one edits.
             </p>
+            <div className="mt-6">
+              <button onClick={load} className="btn-pill-ghost" disabled={loading}>
+                {loading ? 'Refreshing…' : 'Refresh'}
+              </button>
+            </div>
+            <svg className="absolute -right-8 -bottom-8 opacity-10" width="160" height="160" viewBox="0 0 160 160" aria-hidden>
+              <g stroke="var(--ink)" strokeWidth="1" fill="none">
+                <circle cx="80" cy="80" r="70" />
+                <circle cx="80" cy="80" r="50" />
+                <circle cx="80" cy="80" r="30" />
+              </g>
+            </svg>
           </div>
-          <button onClick={load} className="btn-ghost" disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh'}
-          </button>
+
+          <div className="card-blue rounded-lg p-7 flex flex-col justify-between">
+            <p className="eyebrow mb-4" style={{ color: 'rgba(11,13,16,0.55)' }}>Events</p>
+            <div>
+              <p className="font-display text-[64px] leading-none tracking-[-0.04em] text-ink" style={{ fontWeight: 800 }}>
+                {entries.length}
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] font-mono text-ink-2">
+                {filter === 'all' ? 'total' : filter} logged
+              </p>
+            </div>
+          </div>
+
+          <div className="card-cream rounded-lg p-7 flex flex-col justify-between">
+            <p className="eyebrow mb-4">Retention</p>
+            <div>
+              <p className="font-display text-[48px] leading-none tracking-[-0.04em]" style={{ fontWeight: 800, color: 'var(--accent-violet)' }}>
+                2y
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] font-mono text-ink-2">
+                TTL · then purged
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Filter chips */}
         {entries.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="card-lg p-3 flex gap-1.5 flex-wrap items-center">
+            <p className="eyebrow px-2">Filter</p>
             <Chip
               active={filter === 'all'}
               onClick={() => setFilter('all')}
@@ -132,15 +164,13 @@ function AdminAuditPageInner() {
         )}
 
         {loading ? (
-          <div className="surface px-6 py-16 text-center text-[13px] text-ink-3">
-            <p className="text-2xl mb-2 animate-pulse">·· ··</p>
+          <div className="card-lg px-6 py-16 text-center text-[13px] text-ink-3 font-mono uppercase tracking-[0.18em]">
             Loading audit events…
           </div>
         ) : filtered.length === 0 ? (
-          <div className="surface-lg px-10 py-16 text-center">
-            <p className="text-4xl mb-4">📜</p>
-            <h2 className="font-display text-[24px] tracking-[-0.02em] mb-2">
-              {entries.length === 0 ? 'No events yet' : 'Nothing matches'}
+          <div className="card-lg px-10 py-16 text-center">
+            <h2 className="font-display text-[28px] tracking-[-0.025em] mb-2" style={{ fontWeight: 800 }}>
+              {entries.length === 0 ? 'No events yet.' : 'Nothing matches.'}
             </h2>
             <p className="text-[13px] text-ink-3 max-w-sm mx-auto">
               {entries.length === 0
@@ -149,7 +179,7 @@ function AdminAuditPageInner() {
             </p>
           </div>
         ) : (
-          <div className="space-y-10">
+          <div className="card-lg p-6 lg:p-8 space-y-10">
             {grouped.map(([day, items]) => (
               <section key={day}>
                 <div className="flex items-center gap-3 mb-4">
@@ -190,12 +220,12 @@ function AdminAuditPageInner() {
                           />
                         </span>
 
-                        <article className="surface px-4 py-3">
+                        <article className="card-soft px-4 py-3">
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap mb-1.5">
                                 <span
-                                  className="font-mono text-[10.5px] uppercase tracking-[0.16em] px-2 py-0.5 rounded-sm"
+                                  className="font-mono text-[10.5px] uppercase tracking-[0.16em] px-2 py-0.5 rounded-pill"
                                   style={{ background: st.chip.bg, color: st.chip.fg }}
                                 >
                                   {st.label}
@@ -216,7 +246,7 @@ function AdminAuditPageInner() {
                             {has && (
                               <button
                                 onClick={() => setExpanded(open ? null : idx)}
-                                className="text-[11px] uppercase tracking-[0.18em] text-sage-700 hover:text-sage-900 whitespace-nowrap shrink-0"
+                                className="text-[11px] uppercase tracking-[0.18em] text-ink-3 hover:text-ink whitespace-nowrap shrink-0"
                               >
                                 {open ? '− Hide' : '+ Detail'}
                               </button>
@@ -225,8 +255,8 @@ function AdminAuditPageInner() {
 
                           {open && has && (
                             <pre
-                              className="mt-3 px-3 py-2.5 text-[11.5px] font-mono leading-relaxed overflow-auto rounded-sm"
-                              style={{ background: 'var(--ink)', color: '#E8E6E1', maxHeight: '20rem' }}
+                              className="mt-3 px-3 py-2.5 text-[11.5px] font-mono leading-relaxed overflow-auto rounded"
+                              style={{ background: 'var(--ink)', color: 'var(--ink-on-dark)', maxHeight: '20rem' }}
                             >
                               {JSON.stringify(entry.detail, null, 2)}
                             </pre>
@@ -251,11 +281,11 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 px-3 py-1.5 text-[12px] rounded-sm border transition-colors"
+      className="inline-flex items-center gap-2 px-4 py-1.5 text-[13px] rounded-pill transition-colors"
       style={{
-        background:  active ? 'var(--ink)'      : 'var(--bg-elev)',
-        color:       active ? 'var(--bg-elev)'  : 'var(--ink-2)',
-        borderColor: active ? 'var(--ink)'      : 'var(--hairline-2)',
+        background:  active ? 'var(--ink)'         : 'var(--card)',
+        color:       active ? 'var(--ink-on-dark)' : 'var(--ink-2)',
+        border:      active ? '1px solid var(--ink)' : '1px solid var(--hairline)',
       }}
     >
       {accent && !active && (
@@ -264,10 +294,10 @@ function Chip({
       <span>{label}</span>
       {typeof count === 'number' && (
         <span
-          className="font-mono text-[10.5px] px-1.5 py-px rounded-sm"
+          className="font-mono text-[10.5px] px-1.5 py-px rounded-pill"
           style={{
-            background: active ? 'rgba(250,248,243,0.15)' : 'var(--bg-sunken)',
-            color:      active ? 'var(--bg-elev)'         : 'var(--ink-3)',
+            background: active ? 'rgba(255,255,255,0.15)' : 'var(--card-soft)',
+            color:      active ? 'var(--ink-on-dark)'     : 'var(--ink-3)',
           }}
         >
           {count}

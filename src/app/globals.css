@@ -1,209 +1,325 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=DM+Sans:opsz,wght@9..40,300..700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ────────────────────────────────────────────────────────────────────────────
- * CAMARA Portal — design tokens
+ * CAMARA Portal — design tokens, v3 (bento)
  *
- * Soft refined SaaS with telecom heritage. Warm cream paper, sage primary,
- * grain overlay, distinctive serif display type. No purple gradients,
- * no Inter, no pure-white backgrounds.
+ * Cool blue-gray page background, white/off-white cards, heavy condensed
+ * display sans, dark pill CTAs. Bento composition with generous rounded
+ * corners and soft multi-layer shadows.
  * ────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Surface */
-  --bg:           #FAF8F3;   /* warm cream paper */
-  --bg-elev:     #FFFFFF;   /* cards/dialogs sit on this */
-  --bg-sunken:  #F4F1EA;   /* secondary surfaces (sidebar, side rails) */
-  --ink:           #1A1D1F;  /* primary text */
-  --ink-2:        #4A5258;  /* secondary text */
-  --ink-3:        #8B9197;  /* tertiary / metadata */
-  --hairline:    #E5E0D5;   /* warm low-contrast border */
-  --hairline-2: #D6CFC0;
+  /* ── Page surfaces ─────────────────────────────────────────────── */
+  --bg:          #788AA0;   /* main page bg — muted slate blue (the "table") */
+  --bg-soft:     #93A2B5;   /* lighter slate, used as outer halo / scrolled bg */
+  --bg-deep:     #5F6E84;   /* deeper slate, used in stat tiles, overlays */
 
-  /* Accent — sage primary, used sparingly */
-  --sage-50:    #EEF3F0;
-  --sage-100:  #DDE7E0;
-  --sage-300:  #A3BEAE;
-  --sage-500:  #6B8E7F;   /* primary */
-  --sage-700:  #4A6A5C;
-  --sage-900:  #2F4439;
+  /* ── Card surfaces — multi-tone for color variation across bento ── */
+  --card:        #FFFFFF;          /* primary white card */
+  --card-soft:   #ECEEF3;          /* sub-tile inside cards */
+  --card-sunken: #DEE2EB;          /* sunken slot, inputs at rest */
+  --card-pale:   #DCE6F1;          /* pale-blue feature tile */
+  --card-blue:   #B5C5D8;          /* saturated pale blue (the Hex-square color) */
+  --card-cream:  #F2EAD8;          /* warm cream tile (paper feel) */
+  --card-mint:   #D5E6DA;          /* pale mint accent tile */
 
-  /* Status — muted, distinct */
-  --moss:         #5C8B6E;   /* success */
-  --moss-bg:     #E9F0EB;
-  --amber:       #B8771F;   /* pending/warn */
-  --amber-bg:   #F5EAD6;
-  --rust:         #A14A36;   /* error/destructive */
-  --rust-bg:     #F1DCD3;
-  --slate:       #5A6B77;   /* neutral status (suspended) */
-  --slate-bg:   #E4E8EA;
+  /* ── Ink ─────────────────────────────────────────────────────── */
+  --ink:         #0B0D10;   /* near-black headlines + dark pills */
+  --ink-2:       #3B4047;   /* secondary text */
+  --ink-3:       #6B7280;   /* tertiary text */
+  --ink-on-dark: #FFFFFF;
+  --hairline:    rgba(11,13,16,0.06);
+  --hairline-2:  rgba(11,13,16,0.10);
 
-  /* Type stack */
-  --font-display: 'Fraunces', ui-serif, Georgia, serif;
-  --font-body:    'DM Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono:   'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  /* ── Status (semantic) ──────────────────────────────────────── */
+  --moss:        #2F8A5C;   --moss-bg:  #DCF0E5;
+  --rust:        #B0492E;   --rust-bg:  #F6E0D6;
+  --amber:       #B8801A;   --amber-bg: #F5E4C0;
+  --slate:       #4F5A6B;   --slate-bg: #DDE3EC;
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius:     12px;
-  --radius-lg: 18px;
+  /* ── Accents — used sparingly for highlights ─────────────────── */
+  --accent:        #2B6DF6;   --accent-bg:    #E0EBFF;
+  --accent-coral:  #E26C56;   --accent-coral-bg:  #FAE0D7;
+  --accent-violet: #6C5AC4;   --accent-violet-bg: #E6E1F5;
 
-  /* Shadows — soft, never harsh */
-  --shadow-sm:  0 1px 0 rgba(20,18,12,0.04), 0 1px 2px rgba(20,18,12,0.04);
-  --shadow:        0 2px 6px rgba(20,18,12,0.06), 0 8px 24px -8px rgba(20,18,12,0.08);
-  --shadow-lg:    0 8px 32px -8px rgba(20,18,12,0.12);
+  /* Geometry */
+  --radius-sm:   8px;
+  --radius:      14px;     /* default card corner */
+  --radius-lg:   22px;     /* large bento tile */
+  --radius-pill: 999px;
+  --gutter:      14px;
+
+  /* Shadow — soft, layered, for floating cards on the gray bg */
+  --shadow-sm:  0 1px 2px rgba(11,13,16,0.04), 0 1px 1px rgba(11,13,16,0.03);
+  --shadow:     0 4px 12px rgba(11,13,16,0.06), 0 1px 2px rgba(11,13,16,0.04);
+  --shadow-lg:  0 24px 60px -20px rgba(11,13,16,0.18), 0 4px 12px rgba(11,13,16,0.06);
 
   /* Motion */
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
- * Base reset
- * ────────────────────────────────────────────────────────────────────────── */
+* { border-color: var(--hairline); }
+
 html, body {
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-body);
-  font-feature-settings: 'ss01', 'cv11';   /* DM Sans alt forms */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Subtle grain texture overlay — the "paper" feel.
- * Inline SVG noise; no extra asset; very low alpha. */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  pointer-events: none;
-  z-index: 1000;
-  opacity: 0.035;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+/* ── Primitives ─────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
- * Type defaults — these set the tone everywhere
- * ────────────────────────────────────────────────────────────────────────── */
-h1, h2, h3, .display {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
-  letter-spacing: -0.02em;
+.card-lg {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.card-soft {
+  background: var(--card-soft);
+  border-radius: var(--radius);
+}
+
+.card-pale {
+  background: var(--card-pale);
+  border-radius: var(--radius-lg);
+}
+
+.card-blue {
+  background: var(--card-blue);
+  border-radius: var(--radius-lg);
+}
+
+.card-cream {
+  background: var(--card-cream);
+  border-radius: var(--radius-lg);
+}
+
+.card-mint {
+  background: var(--card-mint);
+  border-radius: var(--radius-lg);
+}
+
+.card-dark {
+  background: var(--ink);
+  color: var(--ink-on-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+/* Decorative gradient tile (for "live" / signal tiles) */
+.card-gradient {
+  background: linear-gradient(135deg, var(--accent-violet) 0%, var(--ink) 80%);
+  color: var(--ink-on-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+/* Bento grid — opinionated, dense, ~14px gutters */
+.bento {
+  display: grid;
+  gap: var(--gutter);
+}
+
+/* Pill button — dark, the signature CTA */
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: var(--ink);
+  color: var(--ink-on-dark);
+  border-radius: var(--radius-pill);
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  transition: transform 200ms var(--ease), background 200ms var(--ease);
+}
+.btn-pill:hover { background: #1B2026; transform: translateY(-1px); }
+.btn-pill:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* Pill button — ghost (outlined dark) */
+.btn-pill-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 21px;
+  background: transparent;
   color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  font-size: 14px;
+  transition: background 200ms var(--ease), color 200ms var(--ease);
 }
-h1 { font-size: 2.25rem; line-height: 1.1; }
-h2 { font-size: 1.5rem; line-height: 1.2; }
-h3 { font-size: 1.125rem; font-weight: 500; }
+.btn-pill-ghost:hover { background: var(--ink); color: var(--ink-on-dark); }
 
-/* Numerals + identifiers in mono, always */
-code, .mono, [data-mono] { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+/* Pill button — soft (white on ink) for use inside dark cards */
+.btn-pill-soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: var(--card);
+  color: var(--ink);
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  font-size: 14px;
+  transition: transform 200ms var(--ease);
+}
+.btn-pill-soft:hover { transform: translateY(-1px); }
 
-/* ────────────────────────────────────────────────────────────────────────────
- * Reusable component primitives (no @apply inside Tailwind classes; just
- * raw CSS so tokens read naturally in component files)
- * ────────────────────────────────────────────────────────────────────────── */
-@layer components {
-  /* "paper" card */
-  .surface {
-    background: var(--bg-elev);
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-  }
-  .surface-lg {
-    background: var(--bg-elev);
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-  }
+/* Icon button — small circular */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--card);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  transition: background 200ms var(--ease);
+}
+.btn-icon:hover { background: var(--card-soft); }
 
-  /* primary button — sage; reserve for the ONE main action per page */
-  .btn-primary {
-    display: inline-flex; align-items: center; gap: 0.5rem;
-    padding: 0.625rem 1.125rem;
-    background: var(--sage-700);
-    color: #fff;
-    border-radius: 9999px;
-    font-weight: 500;
-    font-size: 0.875rem;
-    transition: transform 200ms var(--ease), background 200ms var(--ease), box-shadow 200ms var(--ease);
-    box-shadow: 0 1px 0 rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.12);
-  }
-  .btn-primary:hover { background: var(--sage-900); transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  /* ghost button */
-  .btn-ghost {
-    display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.5rem 0.875rem;
-    color: var(--ink-2);
-    background: transparent;
-    border: 1px solid var(--hairline);
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    transition: all 200ms var(--ease);
-  }
-  .btn-ghost:hover { background: var(--bg-sunken); color: var(--ink); border-color: var(--hairline-2); }
-
-  /* destructive */
-  .btn-destructive {
-    display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.5rem 0.875rem;
-    color: var(--rust);
-    background: var(--rust-bg);
-    border: 1px solid transparent;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 200ms var(--ease);
-  }
-  .btn-destructive:hover { background: var(--rust); color: #fff; }
-
-  /* status pill */
-  .pill { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.125rem 0.625rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; }
-  .pill-pending  { background: var(--amber-bg); color: var(--amber); }
-  .pill-approved { background: var(--moss-bg);  color: var(--moss);  }
-  .pill-rejected { background: var(--rust-bg);  color: var(--rust);  }
-  .pill-suspended{ background: var(--slate-bg); color: var(--slate); }
-  .pill-transient{ background: var(--sage-100); color: var(--sage-700); }
-
-  /* form input — pen on paper */
-  .input {
-    width: 100%;
-    padding: 0.625rem 0.875rem;
-    background: var(--bg-elev);
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-sm);
-    color: var(--ink);
-    font-size: 0.9375rem;
-    font-family: var(--font-body);
-    transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease);
-  }
-  .input:focus {
-    outline: none;
-    border-color: var(--sage-500);
-    box-shadow: 0 0 0 3px var(--sage-100);
-  }
-
-  /* hairline divider */
-  .divider { height: 1px; background: var(--hairline); }
-
-  /* slow page-enter reveal — used on top-level page wrappers */
-  .reveal {
-    animation: reveal 600ms var(--ease) both;
-  }
-  @keyframes reveal {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+/* Input — modern, generous */
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--card-soft);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 200ms var(--ease), background 200ms var(--ease);
+}
+.input::placeholder { color: var(--ink-3); }
+.input:focus {
+  outline: none;
+  background: var(--card);
+  border-color: var(--ink);
 }
 
-@layer utilities {
-  .text-balance { text-wrap: balance; }
-  .text-display { font-family: var(--font-display); font-variation-settings: 'opsz' 144; }
-  .text-ink     { color: var(--ink); }
-  .text-ink-2   { color: var(--ink-2); }
-  .text-ink-3   { color: var(--ink-3); }
+/* Eyebrow label */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
+
+/* Display heading helper */
+.display {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  font-variation-settings: 'opsz' 96;
+}
+
+/* Status pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Page enter animation */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal { animation: reveal 360ms var(--ease) both; }
+
+/* Subtle pulse used for "live" indicators */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+.pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
+
+/* ── Backward-compat aliases ────────────────────────────────────
+ * The previous design used .surface / .btn-primary / .btn-ghost etc.
+ * Map them to the new equivalents so pages not yet redesigned still
+ * render coherently while we sweep through them. */
+.surface, .surface-lg {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+.surface-lg { border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 22px;
+  background: var(--ink); color: var(--ink-on-dark);
+  border-radius: var(--radius-pill);
+  font-weight: 500; font-size: 14px;
+  transition: background 200ms var(--ease), transform 200ms var(--ease);
+}
+.btn-primary:hover { background: #1B2026; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 21px;
+  background: transparent; color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-pill);
+  font-weight: 500; font-size: 14px;
+  transition: background 200ms var(--ease), color 200ms var(--ease);
+}
+.btn-ghost:hover { background: var(--ink); color: var(--ink-on-dark); }
+
+.btn-destructive {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 22px;
+  background: var(--rust); color: var(--ink-on-dark);
+  border-radius: var(--radius-pill);
+  font-weight: 500; font-size: 14px;
+}
+
+/* Old sage-* colors → map to ink/accent for legacy refs */
+.text-sage-500, .text-sage-700, .text-sage-900 { color: var(--ink); }
+.bg-sage-50  { background: var(--card-soft); }
+.bg-sage-100 { background: var(--card-soft); }
+.bg-sage-300 { background: var(--card-blue); }
+.bg-sage-500, .bg-sage-700, .bg-sage-900 { background: var(--ink); color: var(--ink-on-dark); }
+.border-sage-300 { border-color: var(--ink); }
+
+/* Old bg-bg-elev / bg-bg-sunken → new tokens */
+.bg-bg-elev   { background: var(--card); }
+.bg-bg-sunken { background: var(--card-soft); }
+
+/* Old pill component */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 500;
+}
+.pill-pending    { background: var(--amber-bg); color: var(--amber); }
+.pill-approved   { background: var(--moss-bg);  color: var(--moss); }
+.pill-rejected   { background: var(--rust-bg);  color: var(--rust); }
+.pill-suspended  { background: var(--slate-bg); color: var(--slate); }
+.pill-transient  { background: var(--slate-bg); color: var(--slate); }

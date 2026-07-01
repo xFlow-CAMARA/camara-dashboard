@@ -93,7 +93,7 @@ export default function Header() {
   return (
     <div className="flex items-center justify-between gap-6 min-w-0">
       <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3">CAMARA · Operator</p>
+        <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3">UAEConnect · Operator</p>
       </div>
 
       <div className="flex items-center gap-3 shrink-0">

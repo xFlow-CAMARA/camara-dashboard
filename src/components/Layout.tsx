@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Sidebar from './Sidebar';
-import Header from './Header';
 import UserMenu from './UserMenu';
 
 interface LayoutProps {
@@ -19,36 +18,34 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-bg">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="lg:pl-72">
-        {/* Top bar — thin, hairline, breathing room */}
-        <div className="sticky top-0 z-30 bg-bg/80 backdrop-blur-md border-b border-hairline">
-          <div className="flex items-center justify-between gap-4 px-6 lg:px-10 py-3">
+      <div className="lg:pl-[312px]">
+        {/* Top bar — floating pill (solid bg so scrolled content doesn't bleed through) */}
+        <div className="sticky top-0 z-30 bg-bg px-3 pt-3 pb-1 lg:pr-3 lg:pl-0">
+          <div className="card-lg px-5 py-3 flex items-center justify-between gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-md text-ink-2 hover:bg-bg-sunken"
+              className="lg:hidden btn-icon"
               aria-label="Open sidebar"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M4 6h16M4 12h16M4 18h16" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
 
-            <div className="flex-1 min-w-0">
-              {isAdmin ? (
-                <Header />
-              ) : (
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-ink-3 font-medium">
-                    CAMARA · Developer Portal
-                  </p>
-                </div>
-              )}
+            <div className="hidden lg:flex items-center gap-2.5 text-[12px] text-ink-3">
+              <span className="block w-1.5 h-1.5 rounded-full bg-moss pulse-dot" />
+              <span className="font-mono uppercase tracking-[0.16em] text-[10px]">
+                {isAdmin ? 'Operator Console' : 'Developer Portal'}
+              </span>
             </div>
+
+            <div className="flex-1" />
+
             <UserMenu />
           </div>
         </div>
 
-        <main className="px-6 lg:px-10 py-8 lg:py-12 reveal">
+        <main className="px-3 pt-3 pb-6 lg:pl-0 lg:pr-3 reveal">
           {children}
         </main>
       </div>

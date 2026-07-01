@@ -15,13 +15,13 @@ export default function MonitoringPanel() {
   const embedUrl     = `${DASHBOARD_PATH}?orgId=1&refresh=5s&kiosk`;
 
   return (
-    <div className="space-y-6">
-      <section className="surface-lg overflow-hidden">
+    <div className="space-y-4">
+      <section className="card-lg overflow-hidden">
         <div className="px-6 py-5 flex items-center justify-between border-b border-hairline">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Observability</p>
-            <h2 className="font-display text-[22px] tracking-[-0.015em] mt-1">
-              5G Core Simulator
+            <p className="eyebrow">Observability</p>
+            <h2 className="font-display text-[26px] tracking-[-0.025em] mt-1" style={{ fontWeight: 800 }}>
+              5G Core Simulator.
             </h2>
             <p className="text-[13px] text-ink-3 mt-1">Real-time core network metrics, streamed via Grafana</p>
           </div>
@@ -29,29 +29,25 @@ export default function MonitoringPanel() {
             href={dashboardUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-ghost"
+            className="btn-pill-ghost"
           >
             Open Grafana →
           </a>
         </div>
 
-        <div className="border-t border-hairline">
-          <div
-            className="flex items-center justify-between px-4 py-2.5 bg-bg-sunken border-b border-hairline"
-          >
-            <span className="text-[11px] uppercase tracking-[0.18em] text-ink-3">
-              Live preview
-            </span>
+        <div>
+          <div className="flex items-center justify-between px-4 py-2.5 bg-card-soft border-b border-hairline">
+            <span className="text-[11px] uppercase tracking-[0.18em] text-ink-3">Live preview</span>
             <a
               href={dashboardUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] uppercase tracking-[0.18em] text-sage-700 hover:text-sage-900"
+              className="text-[11px] uppercase tracking-[0.18em] text-ink-3 hover:text-ink"
             >
               Open in new tab ↗
             </a>
           </div>
-          <div className="relative" style={{ height: '600px', background: 'var(--bg-sunken)' }}>
+          <div className="relative" style={{ height: '600px', background: 'var(--card-soft)' }}>
             {ready ? (
               <iframe
                 src={embedUrl}
@@ -69,30 +65,12 @@ export default function MonitoringPanel() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="surface px-4 py-3">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Status</p>
-          <div className="mt-1.5 flex items-center gap-2">
-            <span className="block w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--moss)' }} />
-            <span className="text-[14px] text-ink">Online</span>
-          </div>
-        </div>
-        <div className="surface px-4 py-3">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Metrics</p>
-          <div className="mt-1.5 flex items-center gap-2">
-            <span className="block w-2 h-2 rounded-full" style={{ background: 'var(--sage-500)' }} />
-            <span className="text-[14px] text-ink">Real-time</span>
-          </div>
-        </div>
-      </div>
-
       <div
-        className="px-4 py-3 rounded-sm text-[12px] flex items-start gap-2"
-        style={{ background: 'var(--amber-bg)', color: 'var(--amber)' }}
+        className="card-lg px-4 py-3 flex items-start gap-3"
       >
-        <span className="font-mono mt-px">!</span>
-        <p>
-          Default Grafana credentials are <span className="font-mono">admin / admin</span>.
+        <span className="block w-2 h-2 rounded-full mt-1.5" style={{ background: 'var(--amber)' }} />
+        <p className="text-[12px] text-ink-2">
+          Default Grafana credentials are <span className="font-mono text-ink">admin / admin</span>.
           You may need to log in on first access.
         </p>
       </div>

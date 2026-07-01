@@ -139,13 +139,14 @@ function PlaygroundInner() {
   if (invokers.length === 0) {
     return (
       <Layout>
-        <div className="max-w-2xl mx-auto surface-lg px-10 py-16 text-center">
-          <p className="text-4xl mb-4">🛰️</p>
-          <h1 className="font-display text-[32px] tracking-[-0.02em] mb-3">Nothing to try yet</h1>
+        <div className="max-w-2xl mx-auto card-lg px-10 py-16 text-center">
+          <h1 className="font-display text-[40px] tracking-[-0.03em] mb-3" style={{ fontWeight: 800 }}>
+            Nothing to try yet.
+          </h1>
           <p className="text-[14px] text-ink-2 mb-8 max-w-md mx-auto">
             Register an app and have it approved before sending requests through the gateway.
           </p>
-          <Link href="/developer/register" className="btn-primary">Register an app →</Link>
+          <Link href="/developer/register" className="btn-pill">Register an app →</Link>
         </div>
       </Layout>
     );
@@ -153,12 +154,50 @@ function PlaygroundInner() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="mb-2">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3 mb-2">Sandbox</p>
-          <h1 className="font-display text-[40px] leading-[1.05] tracking-[-0.025em]">
-            API <span className="italic" style={{ fontVariationSettings: "'opsz' 144, 'SOFT' 80, 'WONK' 1" }}>playground</span>
-          </h1>
+      <div className="space-y-4">
+        {/* Hero bento */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_0.7fr_0.7fr] gap-4">
+          <div className="card-lg p-8 lg:p-10 relative overflow-hidden">
+            <p className="eyebrow mb-4">Sandbox</p>
+            <h1 className="font-display text-[clamp(40px,5vw,60px)] leading-[0.92] tracking-[-0.035em] text-ink" style={{ fontWeight: 800 }}>
+              API<br />playground.
+            </h1>
+            <p className="mt-4 text-[14px] text-ink-2 max-w-md">
+              Pick an app, mint a token, fire a request, see the response. The whole CAMARA round-trip in one screen.
+            </p>
+            <svg className="absolute -right-8 -bottom-8 opacity-10" width="160" height="160" viewBox="0 0 160 160" aria-hidden>
+              <g stroke="var(--ink)" strokeWidth="1.4" fill="none">
+                <path d="M20 80 L60 80 L80 40 L100 120 L120 80 L140 80" />
+              </g>
+            </svg>
+          </div>
+
+          <div className="card-blue rounded-lg p-7 flex flex-col justify-between">
+            <p className="eyebrow mb-4" style={{ color: 'rgba(11,13,16,0.55)' }}>Apps</p>
+            <div>
+              <p className="font-display text-[64px] leading-none tracking-[-0.04em] text-ink" style={{ fontWeight: 800 }}>
+                {invokers.length}
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] font-mono text-ink-2">
+                approved ready
+              </p>
+            </div>
+          </div>
+
+          <div className="card-cream rounded-lg p-7 flex flex-col justify-between">
+            <p className="eyebrow mb-4">Token</p>
+            <div>
+              <p className="font-display text-[40px] leading-none tracking-[-0.04em]" style={{
+                fontWeight: 800,
+                color: tokenStatus === 'ready' ? 'var(--moss)' : tokenStatus === 'error' ? 'var(--rust)' : 'var(--ink-3)',
+              }}>
+                {tokenStatus === 'ready' ? 'Live' : tokenStatus === 'fetching' ? '…' : tokenStatus === 'error' ? 'Err' : 'Idle'}
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] font-mono text-ink-2">
+                {selectedScope || 'no scope'}
+              </p>
+            </div>
+          </div>
         </div>
 
         <Toolbar
@@ -186,10 +225,10 @@ function PlaygroundInner() {
           onExpired={onTokenExpired}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-4">
           <aside className="space-y-4">
-            <div className="surface overflow-hidden">
-              <div className="px-3 py-2.5 text-[10px] uppercase tracking-[0.22em] text-ink-3 bg-bg-sunken border-b border-hairline">
+            <div className="card-lg overflow-hidden">
+              <div className="px-3 py-2.5 text-[10px] uppercase tracking-[0.22em] text-ink-3 bg-card-soft border-b border-hairline">
                 Endpoints
               </div>
               <EndpointList

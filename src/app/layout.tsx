@@ -3,8 +3,8 @@ import "./globals.css";
 import SessionWrapper from "@/components/SessionWrapper";
 
 export const metadata: Metadata = {
-  title: "CAMARA API Dashboard",
-  description: "Test and monitor CAMARA APIs with multiple 5G core backends",
+  title: "UAEConnect — CAMARA API Console",
+  description: "Operate CAMARA Network APIs on top of a 5G core. Approvals, credentials, and live testing in one portal.",
 };
 
 export default function RootLayout({

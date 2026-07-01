@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import AuthGuard from '@/components/AuthGuard';
-import SignalIndicator from '@/components/SignalIndicator';
 
 interface InvokerStatus {
   invoker_id: string;
@@ -34,25 +33,23 @@ const SAMPLE_PATHS: Record<string, { method: string; path: string; body?: object
   'sim-swap':                   { method: 'POST', path: '/sim-swap/vwip/check', body: { phoneNumber: '+33699901032' } },
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pending review',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  suspended: 'Suspended',
-  approving: 'Approving…',
-  rotating: 'Rotating…',
+const STATUS_STYLES: Record<string, { bg: string; fg: string; label: string }> = {
+  pending:   { bg: 'var(--amber-bg)', fg: 'var(--amber)', label: 'Pending review' },
+  approved:  { bg: 'var(--moss-bg)',  fg: 'var(--moss)',  label: 'Approved' },
+  rejected:  { bg: 'var(--rust-bg)',  fg: 'var(--rust)',  label: 'Rejected' },
+  suspended: { bg: 'var(--slate-bg)', fg: 'var(--slate)', label: 'Suspended' },
+  approving: { bg: 'var(--slate-bg)', fg: 'var(--slate)', label: 'Approving…' },
+  rotating:  { bg: 'var(--amber-bg)', fg: 'var(--amber)', label: 'Rotating…' },
 };
 
-function pillClass(status: string) {
-  switch (status) {
-    case 'pending':   return 'pill pill-pending';
-    case 'approved':  return 'pill pill-approved';
-    case 'rejected':  return 'pill pill-rejected';
-    case 'suspended': return 'pill pill-suspended';
-    case 'approving':
-    case 'rotating':  return 'pill pill-transient';
-    default:          return 'pill pill-suspended';
-  }
+function StatusPill({ status }: { status: string }) {
+  const s = STATUS_STYLES[status] ?? { bg: 'var(--slate-bg)', fg: 'var(--slate)', label: status };
+  return (
+    <span className="status-pill" style={{ background: s.bg, color: s.fg }}>
+      <span className="block w-1.5 h-1.5 rounded-full" style={{ background: s.fg }} />
+      {s.label}
+    </span>
+  );
 }
 
 function InvokerCard({ inv }: { inv: InvokerStatus }) {
@@ -64,16 +61,16 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
     keycloak_client_id?: string; keycloak_secret?: string;
     previous_reveal?: { at: string; actor: string } | null;
   } | null>(null);
-  const [showSecret, setShowSecret]   = useState(false);
-  const [credLoading, setCredLoading] = useState(false);
+  const [showSecret,   setShowSecret]   = useState(false);
+  const [credLoading,  setCredLoading]  = useState(false);
   const [selectedScope, setSelectedScope] = useState((inv.scopes_approved ?? [])[0] ?? '');
-  const [token, setToken]             = useState<TokenResponse | null>(null);
+  const [token, setToken]               = useState<TokenResponse | null>(null);
   const [tokenLoading, setTokenLoading] = useState(false);
-  const [tryPath, setTryPath]         = useState('');
-  const [tryMethod, setTryMethod]     = useState('GET');
-  const [tryBody, setTryBody]         = useState('{}');
-  const [tryLoading, setTryLoading]   = useState(false);
-  const [tryResult, setTryResult]     = useState<TryResponse | null>(null);
+  const [tryPath,   setTryPath]   = useState('');
+  const [tryMethod, setTryMethod] = useState('GET');
+  const [tryBody,   setTryBody]   = useState('{}');
+  const [tryLoading, setTryLoading] = useState(false);
+  const [tryResult,  setTryResult]  = useState<TryResponse | null>(null);
 
   const loadCreds = async () => {
     setCredLoading(true);
@@ -120,38 +117,40 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
   };
 
   return (
-    <article className="surface-lg overflow-hidden">
-      {/* Card header — title + status, breathing room */}
+    <article className="card-lg overflow-hidden">
       <header className="flex items-start justify-between px-7 pt-7 pb-5 gap-6">
         <div className="min-w-0">
-          <h3 className="font-display text-[22px] tracking-[-0.015em] text-ink truncate">{inv.invoker_name}</h3>
-          <p className="font-mono text-[11px] text-ink-3 mt-1 truncate">{inv.invoker_id}</p>
-          <p className="text-[12px] text-ink-3 mt-2">
-            Submitted <span className="font-mono">{new Date(inv.submitted_at).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' })}</span>
+          <p className="eyebrow mb-2">Application</p>
+          <h3 className="font-display text-[28px] tracking-[-0.025em] text-ink leading-none truncate" style={{ fontWeight: 800 }}>
+            {inv.invoker_name}
+          </h3>
+          <p className="font-mono text-[11px] text-ink-3 mt-2 truncate">{inv.invoker_id}</p>
+          <p className="text-[12px] text-ink-3 mt-1">
+            Submitted{' '}
+            <span className="font-mono text-ink-2">
+              {new Date(inv.submitted_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <SignalIndicator status={inv.approval_status as never} size={32} />
-          <span className={pillClass(inv.approval_status)}>{STATUS_LABEL[inv.approval_status] ?? inv.approval_status}</span>
-        </div>
+        <StatusPill status={inv.approval_status} />
       </header>
 
       {inv.approval_status === 'rejected' && inv.rejection_reason && (
-        <div className="mx-7 mb-6 px-4 py-3 rounded-sm bg-rust-bg border border-rust/20">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-rust mb-1">Reason for rejection</p>
-          <p className="text-[14px] text-ink-2">{inv.rejection_reason}</p>
+        <div className="mx-7 mb-7 px-4 py-3 rounded" style={{ background: 'var(--rust-bg)' }}>
+          <p className="eyebrow mb-1" style={{ color: 'var(--rust)' }}>Reason for rejection</p>
+          <p className="text-[14px]" style={{ color: 'var(--rust)' }}>{inv.rejection_reason}</p>
         </div>
       )}
 
       {isApproved && (
-        <div className="px-7 pb-7 space-y-6">
-          {/* Scope chips */}
+        <div className="px-7 pb-7 space-y-5">
           {inv.scopes_approved && inv.scopes_approved.length > 0 && (
             <div>
-              <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-2">Granted access</p>
+              <p className="eyebrow mb-2">Granted access</p>
               <div className="flex flex-wrap gap-1.5">
                 {inv.scopes_approved.map(s => (
-                  <span key={s} className="text-[11px] px-2.5 py-1 rounded-full bg-sage-50 text-sage-900 font-mono">
+                  <span key={s} className="text-[11px] px-2.5 py-1 rounded-pill font-mono"
+                    style={{ background: 'var(--ink)', color: 'var(--ink-on-dark)' }}>
                     {s}
                   </span>
                 ))}
@@ -159,30 +158,31 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
             </div>
           )}
 
-          {/* Credentials block */}
+          {/* Credentials */}
           <div>
+            <p className="eyebrow mb-2">Step 1 · Credentials</p>
             {!credentials ? (
-              <button onClick={loadCreds} disabled={credLoading} className="btn-ghost">
-                {credLoading ? 'Loading…' : 'Reveal client credentials'}
+              <button onClick={loadCreds} disabled={credLoading} className="btn-pill-ghost">
+                {credLoading ? 'Loading…' : 'Reveal credentials'}
               </button>
             ) : (
-              <div className="surface p-4 space-y-3">
+              <div className="card-soft p-4 space-y-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-1">Client ID</p>
+                  <p className="eyebrow mb-1">Client ID</p>
                   <p className="font-mono text-[13px] text-ink break-all">{credentials.keycloak_client_id}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-1">Client Secret</p>
+                  <p className="eyebrow mb-1">Client Secret</p>
                   <div className="flex items-center gap-3">
                     <p className="font-mono text-[13px] text-ink break-all flex-1">
                       {showSecret ? credentials.keycloak_secret : '•'.repeat(36)}
                     </p>
-                    <button onClick={() => setShowSecret(s => !s)} className="text-[11px] uppercase tracking-[0.18em] text-sage-700 hover:text-sage-900">
+                    <button onClick={() => setShowSecret(s => !s)} className="text-[11px] font-medium text-ink-3 hover:text-ink">
                       {showSecret ? 'Hide' : 'Show'}
                     </button>
                     <button
                       onClick={() => credentials.keycloak_secret && navigator.clipboard.writeText(credentials.keycloak_secret)}
-                      className="text-[11px] uppercase tracking-[0.18em] text-sage-700 hover:text-sage-900"
+                      className="text-[11px] font-medium text-ink-3 hover:text-ink"
                     >Copy</button>
                   </div>
                 </div>
@@ -192,13 +192,13 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
                   const who  = credentials.previous_reveal.actor;
                   const isMe = who && myEmail && who === myEmail;
                   return isMe ? (
-                    <p className="text-[11px] text-ink-3 mt-2">
+                    <p className="text-[11px] text-ink-3">
                       You last viewed this secret on <span className="font-mono">{when}</span>.
                     </p>
                   ) : (
-                    <p className="text-[11px] text-amber bg-amber-bg rounded-sm px-3 py-2 mt-2 border border-amber/20">
+                    <p className="text-[11px] px-3 py-2 rounded" style={{ background: 'var(--amber-bg)', color: 'var(--amber)' }}>
                       ⚠ Previously revealed to <span className="font-mono">{who}</span> on <span className="font-mono">{when}</span>.
-                      If that wasn&apos;t expected, ask the operator to rotate.
+                      Ask the operator to rotate if unexpected.
                     </p>
                   );
                 })()}
@@ -208,8 +208,8 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
 
           {/* Token step */}
           {credentials && (
-            <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Step 2 — Mint a token</p>
+            <div>
+              <p className="eyebrow mb-2">Step 2 · Mint a token</p>
               <div className="flex gap-2 items-end">
                 <select
                   value={selectedScope}
@@ -218,26 +218,22 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
                 >
                   {(inv.scopes_approved ?? []).map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <button
-                  onClick={getToken}
-                  disabled={tokenLoading || !selectedScope}
-                  className="btn-primary"
-                >
+                <button onClick={getToken} disabled={tokenLoading || !selectedScope} className="btn-pill">
                   {tokenLoading ? 'Requesting…' : 'Request token'}
                 </button>
               </div>
               {token && (
-                <div className={`px-4 py-3 rounded-sm border text-[12px] ${
-                  token.access_token
-                    ? 'bg-moss-bg border-moss/20 text-ink-2'
-                    : 'bg-rust-bg border-rust/20 text-rust'
-                }`}>
+                <div className="mt-3 px-4 py-3 rounded text-[12px]"
+                  style={{
+                    background: token.access_token ? 'var(--moss-bg)' : 'var(--rust-bg)',
+                    color: token.access_token ? 'var(--moss)' : 'var(--rust)',
+                  }}>
                   {token.access_token ? (
                     <>
-                      <p className="text-[10px] uppercase tracking-[0.22em] text-moss mb-2">
+                      <p className="eyebrow mb-2" style={{ color: 'var(--moss)' }}>
                         Token issued · expires in {token.expires_in}s
                       </p>
-                      <div className="font-mono text-[11px] break-all bg-bg-elev rounded p-2 max-h-24 overflow-auto text-ink">
+                      <div className="font-mono text-[11px] break-all card p-2 max-h-24 overflow-auto" style={{ color: 'var(--ink)' }}>
                         {token.access_token}
                       </div>
                     </>
@@ -249,9 +245,9 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
 
           {/* Try-API step */}
           {token?.access_token && (
-            <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3">Step 3 — Call the API</p>
-              <div className="flex gap-2 items-stretch">
+            <div>
+              <p className="eyebrow mb-2">Step 3 · Call the API</p>
+              <div className="flex gap-2 items-stretch mb-2">
                 <select value={tryMethod} onChange={e => setTryMethod(e.target.value)} className="input w-24 font-mono">
                   <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
                 </select>
@@ -262,18 +258,21 @@ function InvokerCard({ inv }: { inv: InvokerStatus }) {
                   value={tryBody}
                   onChange={e => setTryBody(e.target.value)}
                   rows={5}
-                  className="input font-mono text-[12px]"
+                  className="input font-mono text-[12px] mb-2"
                 />
               )}
-              <button onClick={callApi} disabled={tryLoading || !tryPath} className="btn-primary">
+              <button onClick={callApi} disabled={tryLoading || !tryPath} className="btn-pill">
                 {tryLoading ? 'Calling…' : 'Send request'}
               </button>
               {tryResult && (
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-ink-3 mb-1.5">
-                    Response · <span className={`font-mono ${tryResult.status && tryResult.status < 400 ? 'text-moss' : 'text-rust'}`}>HTTP {tryResult.status ?? '—'}</span>
+                <div className="mt-3">
+                  <p className="eyebrow mb-1.5">
+                    Response · <span className="font-mono" style={{
+                      color: tryResult.status && tryResult.status < 400 ? 'var(--moss)' : 'var(--rust)',
+                    }}>HTTP {tryResult.status ?? '—'}</span>
                   </p>
-                  <pre className="bg-ink text-bg-elev rounded p-4 text-[11px] font-mono leading-relaxed overflow-auto max-h-60">
+                  <pre className="rounded p-4 text-[11px] font-mono leading-relaxed overflow-auto max-h-60"
+                    style={{ background: 'var(--ink)', color: 'var(--ink-on-dark)' }}>
                     {typeof tryResult.body === 'string' ? tryResult.body : JSON.stringify(tryResult.body, null, 2)}
                   </pre>
                 </div>
@@ -302,45 +301,89 @@ function DeveloperStatusPageInner() {
 
   useEffect(() => { if (authStatus === 'authenticated') load(); }, [authStatus, load]);
 
+  const counts = {
+    total:    invokers.length,
+    approved: invokers.filter(i => i.approval_status === 'approved').length,
+    pending:  invokers.filter(i => i.approval_status === 'pending').length,
+  };
+
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
-        {/* Page header — editorial style */}
-        <div className="flex items-end justify-between mb-12 gap-6">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-ink-3 mb-3">Your applications</p>
-            <h1 className="font-display text-[44px] leading-[1.05] tracking-[-0.025em]">
-              My <span className="italic" style={{ fontVariationSettings: "'opsz' 144, 'SOFT' 80, 'WONK' 1" }}>registrations</span>
+      <div className="space-y-4">
+        {/* Hero bento — title + stats tiles, multi-color */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
+          <div className="card-lg p-8 lg:p-10 relative overflow-hidden">
+            <p className="eyebrow mb-4">Your applications</p>
+            <h1 className="font-display text-[clamp(40px,5vw,64px)] leading-[0.92] tracking-[-0.035em] text-ink" style={{ fontWeight: 800 }}>
+              My<br />registrations.
             </h1>
-            <p className="mt-3 text-[14px] text-ink-2 max-w-md">
+            <p className="mt-4 text-[14px] text-ink-2 max-w-md">
               Apps registered under <span className="font-mono text-ink">{session?.user?.email}</span>.
               Reveal credentials, mint tokens, call the network.
             </p>
+            <div className="mt-6 flex items-center gap-3">
+              <Link href="/developer/register" className="btn-pill">+ Register app</Link>
+              <button onClick={load} className="btn-pill-ghost">Refresh</button>
+            </div>
+            {/* decorative arc */}
+            <svg className="absolute -right-12 -bottom-12 opacity-10" width="180" height="180" viewBox="0 0 180 180" aria-hidden>
+              <circle cx="90" cy="90" r="80" fill="none" stroke="var(--ink)" strokeWidth="1.5" />
+              <circle cx="90" cy="90" r="60" fill="none" stroke="var(--ink)" strokeWidth="1.5" />
+              <circle cx="90" cy="90" r="40" fill="none" stroke="var(--ink)" strokeWidth="1.5" />
+            </svg>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={load} className="btn-ghost">Refresh</button>
-            <Link href="/developer/register" className="btn-primary">+ Register app</Link>
+
+          <div className="grid grid-cols-3 gap-3">
+            <StatTile label="Total"    value={counts.total}    color="blue" />
+            <StatTile label="Approved" value={counts.approved} color="mint" />
+            <StatTile label="Pending"  value={counts.pending}  color="cream" />
           </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-20 text-ink-3 text-[14px]">Loading…</div>
+          <div className="card-lg py-16 text-center text-ink-3 text-[13px] font-mono uppercase tracking-[0.18em]">
+            Loading…
+          </div>
         ) : invokers.length === 0 ? (
-          <div className="surface-lg text-center py-20 px-8">
-            <p className="text-5xl mb-4">📡</p>
-            <h3 className="font-display text-[22px] mb-2">No applications yet</h3>
-            <p className="text-[14px] text-ink-2 mb-6 max-w-md mx-auto">
+          <div className="card-lg py-16 px-8 text-center">
+            <p className="font-display text-[28px] tracking-[-0.025em] mb-2" style={{ fontWeight: 800 }}>
+              No applications yet.
+            </p>
+            <p className="text-[14px] text-ink-3 max-w-md mx-auto mb-6">
               Register your first app to get a signed CAPIF identity and request CAMARA API access.
             </p>
-            <Link href="/developer/register" className="btn-primary">Register your first app →</Link>
+            <Link href="/developer/register" className="btn-pill">Register your first app →</Link>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {invokers.map(inv => <InvokerCard key={inv.invoker_id} inv={inv} />)}
           </div>
         )}
       </div>
     </Layout>
+  );
+}
+
+function StatTile({
+  label, value, color = 'white',
+}: {
+  label: string; value: number; color?: 'white' | 'blue' | 'mint' | 'cream' | 'dark';
+}) {
+  const cls = {
+    white: 'card-lg',
+    blue:  'card-blue rounded-lg shadow',
+    mint:  'card-mint rounded-lg shadow',
+    cream: 'card-cream rounded-lg shadow',
+    dark:  'card-dark',
+  }[color];
+  const valueColor = color === 'dark' ? 'var(--ink-on-dark)' : 'var(--ink)';
+  return (
+    <div className={`${cls} p-5 flex flex-col justify-between`}>
+      <p className="font-display text-[44px] leading-none tracking-[-0.04em]" style={{ fontWeight: 800, color: valueColor }}>{value}</p>
+      <p className="eyebrow mt-3" style={{ color: color === 'dark' ? 'rgba(255,255,255,0.55)' : 'var(--ink-3)' }}>
+        {label}
+      </p>
+    </div>
   );
 }
 
